@@ -11,7 +11,6 @@
 /**********************************************************
 *                      GLOBALS    
 *********************************************************/
-extern QueueHandle_t     file_command_q;
 
 /**********************************************************
 *                      DEFINES
@@ -70,4 +69,4 @@ typedef struct{
 **********************************************************/
 void fetch_nvs(commandQ_file_t* commandQ_cmd);
 void file_core_spawner(void);
-
+BaseType_t equeue_write(commandQ_file_t* commandQ_cmd);

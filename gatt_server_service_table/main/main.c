@@ -14,9 +14,6 @@
 #include "ble_core.h"
 #include "file_core.h"
 
-
-static const char  TAG[30]   = "FILE_CORE";
-
 int app_main(){
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
@@ -27,13 +24,14 @@ int app_main(){
 
     ble_init();
     file_core_spawner();
- 
+/* 
     commandQ_file_t commandQ_cmd;
     for(int i = 0; i < PROVISION_CHUNK_SIZE; i++){
       commandQ_cmd.provision_chunk[i] = i;
     } 
 
-    xQueueSendToBack(file_command_q, &commandQ_cmd, 0);
+  
+    equeue_write(&commandQ_cmd);
 
     memset(&commandQ_cmd, 0, PROVISION_CHUNK_SIZE);
 
@@ -49,6 +47,6 @@ int app_main(){
     
     
     //state_post_event(wifi_disconnect);
-
+*/
     return(0);
 }

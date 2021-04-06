@@ -23,11 +23,10 @@ static const char  TAG[30]   = "FILE_CORE";
 
 // local mutexes
 static SemaphoreHandle_t nvs_sem;
-
+static QueueHandle_t     file_command_q;
 /**********************************************************
 *              FILE CORE GLOBAL VARIABLES
 **********************************************************/
-QueueHandle_t     file_command_q;
 
 /**********************************************************
 *                  FILE CORE FUNCTIONS
@@ -294,6 +293,15 @@ static void file_thread(void* ptr) {
         // see the failure then
         update_nvs( &commandQ_cmd );
     }
+}
+
+BaseType_t equeue_write(commandQ_file_t* commandQ_cmd){
+    if (!commandQ_cmd){
+      ESP_LOGE(TAG, "PARAM NULL!");
+      ASSERT(0);
+    }
+ 
+    return xQueueSendToBack(file_command_q, commandQ_cmd, RTOS_DONT_WAIT);
 }
 
 void file_core_spawner() {
