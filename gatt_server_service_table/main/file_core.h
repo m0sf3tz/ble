@@ -22,8 +22,6 @@
 #define FILE_RET_FAIL           (10)
 #define FILE_MEM_EMPTY          (11)
 
-#define WEAR_PARTITION_SIZE (0xe1000)
-
 /* NVS related stuff */
 #define ITEM_GOOD           (0)
 #define ITEM_NOT_INITILIZED (1)
@@ -32,7 +30,6 @@
 #define ITEM_CANT_SET       (4)
 
 #define NVS_CHUNK           (0)
-
 
 #define MAX_MTU_SIZE      (512)
 
