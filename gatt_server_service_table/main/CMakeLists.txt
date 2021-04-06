@@ -1,2 +1,6 @@
-idf_component_register(SRCS "gatts_table_creat_demo.c"
-                    INCLUDE_DIRS ".")
+idf_component_register(SRCS "state_core.c"
+                            "net_state.c"
+                            "main.c"
+                            "file_core.c"
+                            "ble_core.c"
+                            INCLUDE_DIRS ".")
