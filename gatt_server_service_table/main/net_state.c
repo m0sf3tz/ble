@@ -1,114 +1,152 @@
-#include "esp_system.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include <errno.h>
 
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "wifi_state.h"
-#include "state_core.h"
-#include "net_state.h"
 #include "global_defines.h"
+#include "net_state.h"
+#include "state_core.h"
+#include "wifi_state.h"
 
 /*********************************************************
 *                  STATIC VARIABLES
 **********************************************************/
 static const char TAG[] = "NET_STATE";
-static func_ptr func_table[net_state_len];
+static SemaphoreHandle_t  net_state_mutex;
+static bool net_state;
+
+/**********************************************************
+*                 FORWARD DECLARATIONS 
+**********************************************************/
 
 /*********************************************************
-*                     FUNCTIONS
+*                   STATE FUNCTIONS
 **********************************************************/
-static void state_wait_for_wifi() {
-  // do nothing
+static void state_wait_for_wifi_func() {
+    ESP_LOGI(TAG, "Entering wait_for_wifi state");
+    // do nothing
+    set_net_state(false);;
 }
 
-static void state_wait_for_provisions() {
-  // do nothing
+static void state_wait_for_provisions_func() {
+    ESP_LOGI(TAG, "Entering wait_for_prov state");
+    // do nothing
+    set_net_state(true);
 }
 
-static void state_upload_data() {
+static void state_upload_data_func() {
 }
 
-// returns the next state
-static func_ptr update_state(state_t * curr_state, state_event_t event, func_ptr old_func){
-  if (*curr_state == net_waiting_wifi){
-    if (event == wifi_connect){
-        ESP_LOGI(TAG, "New state net_wait_prov");
-        *curr_state = net_waiting_prov;
-        return state_wait_for_provisions;
-    }
-  }
-
-  if (*curr_state == net_waiting_prov ){
-    if (event == wifi_disconnect){
-        ESP_LOGI(TAG, "New state net_waiting_wifi");
-        *curr_state = net_waiting_prov;
-        return state_wait_for_provisions;
-    }
-  }
-
-  // Don't change state
-  return old_func;
-}
-
-static void net_state(void* v) {
-    func_ptr fptr = state_wait_for_wifi;
-    state_event_t new_event;
-    state_t state;
-    BaseType_t xStatus; 
-
-    for (;;) {
-      //execute current function
-      fptr();
-
-      //get event
-      new_event = INVALID_EVENT;
-      xStatus = xQueueReceive(events_net_q, &new_event, RTOS_DONT_WAIT);
-      if (xStatus == pdFALSE){
-        // no new event, sleep for 1 second
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
-        continue;
-      }
-
-      // rxed an event, see if we need to change state
-      if (new_event != INVALID_EVENT){
-        ESP_LOGI(TAG, "Rxed valid event == %d", new_event);
-        fptr = update_state(&state, new_event, fptr);
-      }else{
-        ESP_LOGE(TAG,"New event not set!");
+// Returns the next state
+static void next_state_func(state_t* curr_state, state_event_t event) {
+    if (!curr_state) {
+        ESP_LOGE(TAG, "ARG= NULL!");
         ASSERT(0);
-      } 
-
-      //reset new_event
-      new_event = INVALID_EVENT;
     }
+
+    if (*curr_state == net_waiting_wifi) {
+        if (event == wifi_connect) {
+            ESP_LOGI(TAG, "Old State: net_waiting_wifi, Next: net_waiting_prov");
+            *curr_state = net_waiting_prov;
+            return;
+        }
+    }
+
+    if (*curr_state == net_waiting_prov) {
+        if (event == wifi_disconnect) {
+            ESP_LOGI(TAG, "Old State: net_waitin_prov, Next: net_waiting_wifi");
+            *curr_state = net_waiting_wifi;
+        }
+    }
+
+    // Stay in the same state
 }
 
-static void init_fnc_table(){
-  func_table[net_waiting_wifi] = state_wait_for_wifi;
-  func_table[net_waiting_prov] = state_wait_for_provisions;
-  func_table[net_running] = state_upload_data;
+char* event_print_func(state_event_t event) {
+    switch (event) {
+    case (wifi_disconnect):
+        return "wifi_disconnect";
+        break;
+    case (wifi_connect):
+        return "wifi_connect";
+        break;
+    }
+    // event not targeted at this state machine
+    return NULL;
+}
+
+// Returns the state function, given a state
+static func_ptr get_state_func(state_t current_state) {
+    static func_ptr func_table[net_state_len] = {
+        state_wait_for_wifi_func,
+        state_wait_for_provisions_func,
+        state_upload_data_func
+    };
+
+    if (current_state >= net_state_len) {
+        ESP_LOGE(TAG, "Current state out of bounds!");
+        ASSERT(0);
+    }
+
+    return func_table[current_state];
+}
+
+static state_event_t get_event_func() {
+    state_event_t new_event = INVALID_EVENT;
+    xQueueReceive(events_net_q, &new_event, RTOS_DONT_WAIT);
+    return new_event;
+}
+
+/*********************************************************
+*                NON-STATE  FUNCTIONS
+**********************************************************/
+void set_net_state(bool state){
+    if (pdTRUE != xSemaphoreTake(net_state_mutex, NET_SATE_MUTEX_WAIT)) {
+        ESP_LOGE(TAG, "FAILED TO TAKE NET_SATE_MUTEX !");
+        ASSERT(0);
+    }
+    net_state = state;
+    xSemaphoreGive(net_state_mutex);
+}
+
+bool get_net_state(){
+    if (pdTRUE != xSemaphoreTake(net_state_mutex, NET_SATE_MUTEX_WAIT)) {
+        ESP_LOGE(TAG, "FAILED TO TAKE NET_SATE_MUTEX !");
+        ASSERT(0);
+    }
+    bool ret = net_state;
+    xSemaphoreGive(net_state_mutex);
+ 
+    return ret;
+}
+
+static void net_state_init_freertos_objects() {
+    net_state_mutex = xSemaphoreCreateMutex();
+    
+    // make sure we init all the rtos objects
+    ASSERT(net_state_mutex);
 }
 
 void net_state_spawner() {
-    BaseType_t rc;
+    net_state_init_freertos_objects();
 
-    init_fnc_table();
-    rc = xTaskCreate(net_state,
-                     "net_state",
-                     4096,
-                     NULL,
-                     4,
-                     NULL);
+    static state_init_s net_state = {
+        .next_state        = next_state_func,
+        .tick_period_ms    = 2000,
+        .get_event         = get_event_func,
+        .translator        = get_state_func,
+        .event_print       = event_print_func,
+        .state_name_string = "net_state"
+    };
 
-    if (rc != pdPASS) {
-        assert(0);
-    }
+    start_new_state_machine(&net_state);
 }

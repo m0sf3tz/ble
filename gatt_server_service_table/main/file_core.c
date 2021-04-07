@@ -15,11 +15,10 @@
 #include "file_core.h"
 #include "global_defines.h"
 
-
 /**********************************************************
 *              MASTER CORE STATIC VARIABLES
 **********************************************************/
-static const char  TAG[30]   = "FILE_CORE";
+static const char TAG[30] = "FILE_CORE";
 
 // local mutexes
 static SemaphoreHandle_t nvs_sem;
@@ -32,9 +31,9 @@ static QueueHandle_t     file_command_q;
 *                  FILE CORE FUNCTIONS
 **********************************************************/
 static void file_core_init_freertos_objects() {
-    nvs_sem          = xSemaphoreCreateMutex();
-    file_command_q   = xQueueCreate(1, sizeof(commandQ_file_t));
-    
+    nvs_sem        = xSemaphoreCreateMutex();
+    file_command_q = xQueueCreate(1, sizeof(commandQ_file_t));
+
     // make sure we init all the rtos objects
     ASSERT(file_command_q);
     ASSERT(nvs_sem);
@@ -128,7 +127,7 @@ static int file_core_get(int item, void* data) {
             ESP_LOGE(TAG, "Unknown item = %d \n", item);
             ASSERT(0);
         }
-        
+
         switch (err) {
         case ESP_OK:
             printf("Done\n");
@@ -153,7 +152,7 @@ static int file_core_get(int item, void* data) {
 }
 
 int verify_nvs_required_items() {
-/*
+    /*
   uint64_t device_id;
     int      ret_deviceid = file_core_get(NVS_DEVICE_ID, &device_id);
 
@@ -193,11 +192,11 @@ int verify_nvs_required_items() {
         return 1;
     }
 */
-  return 1;
+    return 1;
 }
 
 void file_core_print_details() {
-/*
+    /*
     uint64_t device_id;
     int      ret_deviceid = file_core_get(NVS_DEVICE_ID, &device_id);
 
@@ -254,22 +253,22 @@ void file_core_print_details() {
 */
 }
 
-void fetch_nvs(commandQ_file_t* commandQ_cmd){
-    if (!commandQ_cmd){
-      ESP_LOGE(TAG, "PARAM NULL!");
-      ASSERT(0);
+void fetch_nvs(commandQ_file_t* commandQ_cmd) {
+    if (!commandQ_cmd) {
+        ESP_LOGE(TAG, "PARAM NULL!");
+        ASSERT(0);
     }
-  
+
     ESP_LOGI(TAG, "fetching from memory!");
     file_core_get(NVS_CHUNK, commandQ_cmd);
 }
 
-static void update_nvs(commandQ_file_t* commandQ_cmd){
-    if (!commandQ_cmd){
-      ESP_LOGE(TAG, "PARAM NULL!");
-      ASSERT(0);
+static void update_nvs(commandQ_file_t* commandQ_cmd) {
+    if (!commandQ_cmd) {
+        ESP_LOGE(TAG, "PARAM NULL!");
+        ASSERT(0);
     }
-  
+
     ESP_LOGI(TAG, "Commiting command to memory!");
     file_core_set(NVS_CHUNK, commandQ_cmd);
 }
@@ -277,7 +276,7 @@ static void update_nvs(commandQ_file_t* commandQ_cmd){
 static void file_thread(void* ptr) {
     commandQ_file_t commandQ_cmd;
 
-    ESP_LOGI(TAG, "Starting file core!!");  
+    ESP_LOGI(TAG, "Starting file core!!");
     for (;;) {
         // Wait for command
         BaseType_t xStatus = xQueueReceive(file_command_q, &commandQ_cmd, portMAX_DELAY);
@@ -285,22 +284,22 @@ static void file_thread(void* ptr) {
             ESP_LOGE(TAG, "Failed to read Queue!");
             ASSERT(0);
         }
-        
-        ESP_LOGI(TAG, "recived a command for file_core!");  
+
+        ESP_LOGI(TAG, "recived a command for file_core!");
 
         // we only expect to get one type of command - and that's a command to commit to memory
         // we won't check for an error, but when the phone reads back to verify the write it will
         // see the failure then
-        update_nvs( &commandQ_cmd );
+        update_nvs(&commandQ_cmd);
     }
 }
 
-BaseType_t equeue_write(commandQ_file_t* commandQ_cmd){
-    if (!commandQ_cmd){
-      ESP_LOGE(TAG, "PARAM NULL!");
-      ASSERT(0);
+BaseType_t equeue_write(commandQ_file_t* commandQ_cmd) {
+    if (!commandQ_cmd) {
+        ESP_LOGE(TAG, "PARAM NULL!");
+        ASSERT(0);
     }
- 
+
     return xQueueSendToBack(file_command_q, commandQ_cmd, RTOS_DONT_WAIT);
 }
 

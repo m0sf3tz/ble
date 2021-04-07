@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,11 +25,13 @@ void ble_init(void);
 *                      ENUMS
 **********************************************************/
 /* Attributes State Machine */
-enum
-{
+enum {
     IDX_SVC,
     IDX_CHAR_A,
     IDX_VAL_A,
+  
+    ID_CHAR_WIFI,
+    ID_VAL_WIFI,
 
     IDX_FINAL,
 };
