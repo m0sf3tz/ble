@@ -29,7 +29,6 @@ static const char       TAG[] = "STATE_CORE";
 /**********************************************************
 *                       FUNCTIONS
 **********************************************************/
-
 // this emulates DBUS on standard UNIX distros
 // the thread reads an incoming value from a queue
 // and then multiplexes it out on multiple queues
@@ -83,18 +82,52 @@ static void state_machine(void* arg) {
     state_init_s* state_init_ptr = (state_init_s*)(arg);
     state_t       state          = state_init_ptr->starting_state;
     state_event_t new_event;
-
     for (;;) {
-        // Execute current function
-        state_init_ptr->translator(state)();
+        // Get the current state information
+        state_array_s state_info = state_init_ptr->translator(state);
+        uint32_t timeout     = state_info.loop_timer;
+        func_ptr state_func  = state_info.state_function_pointer;
+        uint32_t wake_up_time;
 
+        // Run the current state;
+        state_func();
+
+        // calculate when we would wake up if we don't get an event.
+        wake_up_time = xTaskGetTickCount() + state_info.loop_timer;
+
+        ESP_LOGI(TAG, "sleepint for %d, %d", state_info.loop_timer, wake_up_time);
         // Check for new events
-        new_event = state_init_ptr->get_event();
-        if (new_event == INVALID_EVENT) {
-            // No new event, sleep
-            vTaskDelay(state_init_ptr->tick_period_ms / portTICK_PERIOD_MS);
-            continue;
-        }
+        do{
+          // Wait until a new event comes
+          new_event = state_init_ptr->get_event(timeout);
+          
+          // Check if we signed up for this event
+          if(state_init_ptr->filter_event(new_event)){
+            // We are registered, handle the event,
+            break;
+          } else {
+            // Since we woke up to handle the event, we messed up our sleep - 
+            // we must calculate a new timeout
+
+            if(timeout == portMAX_DELAY){
+              ESP_LOGI(TAG, "timeout infinity");
+              // timeout = infinity, continue waiting
+              continue;
+            }
+
+            // we need to go back to waiting for an event, calculate new timeout
+            timeout = wake_up_time - xTaskGetTickCount();
+            ESP_LOGI(TAG, "bs eevnt!, sleeping for %d", timeout);
+          
+            // If any of the following happen, it means either we are
+            // late to call the function or exactly on time, go ahead and call 
+            if (timeout > state_info.loop_timer || timeout == 0){
+              ESP_LOGI(TAG,"Rare event... timer went negative!");
+              break;
+            }
+          }
+        }while(true);
+        
         // Recieved an event, see if we need to change state
         state_init_ptr->next_state(&state, new_event);
 

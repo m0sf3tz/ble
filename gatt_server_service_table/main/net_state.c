@@ -85,11 +85,12 @@ char* event_print_func(state_event_t event) {
 }
 
 // Returns the state function, given a state
-static func_ptr get_state_func(state_t current_state) {
-    static func_ptr func_table[net_state_len] = {
-        state_wait_for_wifi_func,
-        state_wait_for_provisions_func,
-        state_upload_data_func
+static state_array_s get_state_func(state_t current_state) {
+    static state_array_s  func_table[net_state_len] = {
+      //{      (state function)           , looper time },  
+        { state_wait_for_wifi_func        , portMAX_DELAY            },
+        { state_wait_for_provisions_func  , 1000/portTICK_PERIOD_MS  },
+        { state_upload_data_func          , 2000/portTICK_PERIOD_MS  },
     };
 
     if (current_state >= net_state_len) {
@@ -100,9 +101,9 @@ static func_ptr get_state_func(state_t current_state) {
     return func_table[current_state];
 }
 
-static state_event_t get_event_func() {
+static state_event_t get_event_func(uint32_t timeout) {
     state_event_t new_event = INVALID_EVENT;
-    xQueueReceive(events_net_q, &new_event, RTOS_DONT_WAIT);
+    xQueueReceive(events_net_q, &new_event, timeout);
     return new_event;
 }
 
@@ -136,17 +137,26 @@ static void net_state_init_freertos_objects() {
     ASSERT(net_state_mutex);
 }
 
-void net_state_spawner() {
-    net_state_init_freertos_objects();
+static bool event_filter_func(state_event_t event) {
+  return false;
+}
 
+state_init_s * get_net_state_handle(){
     static state_init_s net_state = {
         .next_state        = next_state_func,
-        .tick_period_ms    = 2000,
         .get_event         = get_event_func,
         .translator        = get_state_func,
         .event_print       = event_print_func,
-        .state_name_string = "net_state"
+        .state_name_string = "net_state",
+        .filter_event      = event_filter_func,
     };
+  return &(net_state);
+}
 
-    start_new_state_machine(&net_state);
+
+void net_state_spawner() {
+    net_state_init_freertos_objects();
+
+    // State the state machine
+    start_new_state_machine( get_net_state_handle() );
 }
