@@ -16,10 +16,10 @@
 /**********************************************************
 *                      DEFINES
 **********************************************************/
-#define WIFI_STATE_BASE_OFFSET (100) /* all events are global 
-                                        we need to set this   
-                                        as not too conlfict   
-                                        in namespace
+#define WIFI_STATE_BASE_OFFSET (100) /* all events are global \
+                                        we need to set this   \
+                                        as not too conlfict   \
+                                        in namespace          \
                                       */
 /*********************************************************
 *                      ENUMS

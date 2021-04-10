@@ -66,20 +66,20 @@ static const unsigned short crc16tab[256] = {
 *                                        STATIC FUNCTIONS *
 **********************************************************/
 static uint16_t crc16(uint8_t* buf, size_t len) {
-  ESP_LOGI(TAG, "Calculating CRC for len %d", len);
-  
-  int      counter;
-  uint16_t crc = 0xBEEF;
+    ESP_LOGI(TAG, "Calculating CRC for len %d", len);
 
-  if (!buf){
-    ESP_LOGE(TAG, "CRC buf null!");
-    ASSERT(0);
-  }
+    int      counter;
+    uint16_t crc = 0xBEEF;
 
-  for (counter = 0; counter < len; counter++) {
-    crc = (crc << 8) ^ crc16tab[((crc >> 8) ^ buf[counter]) & 0x00FF];
-  }
-  return crc;
+    if (!buf) {
+        ESP_LOGE(TAG, "CRC buf null!");
+        ASSERT(0);
+    }
+
+    for (counter = 0; counter < len; counter++) {
+        crc = (crc << 8) ^ crc16tab[((crc >> 8) ^ buf[counter]) & 0x00FF];
+    }
+    return crc;
 }
 
 static void file_core_init_freertos_objects() {
@@ -213,14 +213,14 @@ static void update_nvs(commandQ_file_t* commandQ_cmd) {
     }
 
     crc16_expected = commandQ_cmd->crc_16;
-    crc16_calc = crc16(commandQ_cmd->provision_chunk, PROVISION_CHUNK_SIZE);
+    crc16_calc     = crc16(commandQ_cmd->provision_chunk, PROVISION_CHUNK_SIZE);
     ESP_LOGI(TAG, "CRC16(calculated) == %hu, CRC16(expected) == %hu", crc16_calc, crc16_expected);
 
-    if(crc16_calc != crc16_expected){
-      ESP_LOGE(TAG, "Error! Won't commit! CRC ERROR!");
-      return;
+    if (crc16_calc != crc16_expected) {
+        ESP_LOGE(TAG, "Error! Won't commit! CRC ERROR!");
+        return;
     } else {
-      ESP_LOGI(TAG, "CRC GOOD!");
+        ESP_LOGI(TAG, "CRC GOOD!");
     }
 
     file_core_set(NVS_CHUNK, commandQ_cmd);
@@ -250,45 +250,45 @@ static void file_thread(void* ptr) {
 /**********************************************************
 *                                        GLOBAL FUNCTIONS *
 **********************************************************/
-// If device is provisioned, breaks down the blob and 
+// If device is provisioned, breaks down the blob and
 // returns a particular value based on a key IE,
 // Key -> IP_KEY, fetches the IP value from the blob
-int get_provision_item(char* dest, uint8_t key){
-  int rc;
-  uint8_t buf[PROVISION_CHUNK_SIZE];
+int get_provision_item(char* dest, uint8_t key) {
+    int     rc;
+    uint8_t buf[PROVISION_CHUNK_SIZE];
 
-  if(!dest){
-     ESP_LOGE(TAG, "PARAM NULL!");
-     ASSERT(0);
-  }
+    if (!dest) {
+        ESP_LOGE(TAG, "PARAM NULL!");
+        ASSERT(0);
+    }
 
-  if(key > MAX_KEY){
-     ESP_LOGE(TAG, "KEY WRONG!");
-     ASSERT(0);
-  }
+    if (key > MAX_KEY) {
+        ESP_LOGE(TAG, "KEY WRONG!");
+        ASSERT(0);
+    }
 
-  memset(buf, 0, PROVISION_CHUNK_SIZE);
+    memset(buf, 0, PROVISION_CHUNK_SIZE);
 
-  ESP_LOGI(TAG, "fetching from memory!");
-  rc = file_core_get(NVS_CHUNK, buf);
-  if (rc != ITEM_GOOD){
-    return rc;
-  }
+    ESP_LOGI(TAG, "fetching from memory!");
+    rc = file_core_get(NVS_CHUNK, buf);
+    if (rc != ITEM_GOOD) {
+        return rc;
+    }
 
-  switch(key){
-    case(IP_KEY):
-      memcpy(dest, buf, IP_LEN);
-      return ITEM_GOOD;
-    case(SSID_KEY):
-      memcpy(dest, buf + SSID_OFFSET, SSID_LEN);
-      return ITEM_GOOD;
-    case(PW_KEY):
-      memcpy(dest, buf + PW_OFFSET, PW_LEN);
-      return ITEM_GOOD;
+    switch (key) {
+    case (IP_KEY):
+        memcpy(dest, buf, IP_LEN);
+        return ITEM_GOOD;
+    case (SSID_KEY):
+        memcpy(dest, buf + SSID_OFFSET, SSID_LEN);
+        return ITEM_GOOD;
+    case (PW_KEY):
+        memcpy(dest, buf + PW_OFFSET, PW_LEN);
+        return ITEM_GOOD;
     default:
-      ESP_LOGE(TAG, "Key not handled...");
-      ASSERT(0);
-  }
+        ESP_LOGE(TAG, "Key not handled...");
+        ASSERT(0);
+    }
 }
 
 BaseType_t equeue_write(commandQ_file_t* commandQ_cmd) {

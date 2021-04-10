@@ -29,7 +29,7 @@ enum {
     IDX_SVC,
     IDX_CHAR_A,
     IDX_VAL_A,
-  
+
     ID_CHAR_WIFI,
     ID_VAL_WIFI,
 

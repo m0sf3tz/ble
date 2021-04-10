@@ -163,13 +163,13 @@ static const uint16_t GATTS_SERVICE_UUID_TEST    = 0x00FF;
 static const uint16_t GATTS_CHAR_UUID_TERA_FIRE  = 0xABCD;
 static const uint16_t GATTS_CHAR_UUID_WIFI_STATE = 0xBEEF;
 
-static const uint16_t primary_service_uuid             = ESP_GATT_UUID_PRI_SERVICE;
-static const uint16_t character_declaration_uuid       = ESP_GATT_UUID_CHAR_DECLARE;
-static const uint8_t  char_prop_read_write             = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
-static const uint8_t  char_prop_read                   = ESP_GATT_CHAR_PROP_BIT_READ;
+static const uint16_t primary_service_uuid       = ESP_GATT_UUID_PRI_SERVICE;
+static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
+static const uint8_t  char_prop_read_write       = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+static const uint8_t  char_prop_read             = ESP_GATT_CHAR_PROP_BIT_READ;
 
-static const uint8_t  prov_value[1]; // Note, this is not actually used, the application layer is in charge of repsonding to writes/reads of ATT objects
-                                     // nevertheless, the API to set up the GATT table takes an arugement, so we pass this
+static const uint8_t prov_value[1]; // Note, this is not actually used, the application layer is in charge of repsonding to writes/reads of ATT objects
+                                    // nevertheless, the API to set up the GATT table takes an arugement, so we pass this
 
 /* Full Database Description - Used to add attributes into the database */
 static const esp_gatts_attr_db_t gatt_db[IDX_FINAL] = {
@@ -186,7 +186,7 @@ static const esp_gatts_attr_db_t gatt_db[IDX_FINAL] = {
     [ID_CHAR_WIFI] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_prop_read } },
 
     /* Wifi state Characteristic Value */
-    [ID_VAL_WIFI] = { { ESP_GATT_RSP_BY_APP }, { ESP_UUID_LEN_16, (uint8_t*)&GATTS_CHAR_UUID_WIFI_STATE , ESP_GATT_PERM_READ, GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(prov_value), (uint8_t*)prov_value } },
+    [ID_VAL_WIFI] = { { ESP_GATT_RSP_BY_APP }, { ESP_UUID_LEN_16, (uint8_t*)&GATTS_CHAR_UUID_WIFI_STATE, ESP_GATT_PERM_READ, GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(prov_value), (uint8_t*)prov_value } },
 };
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param) {
@@ -349,16 +349,16 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         ESP_LOGI(GATTS_TABLE_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
         esp_gatt_rsp_t rsp;
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-        rsp.attr_value.handle   = param->read.handle;
-        rsp.attr_value.len      = 1;
-        
-        if (param->read.handle == handle_start+ID_VAL_WIFI){
-          ESP_LOGI(GATTS_TABLE_TAG, "Reading WIFI state");
-          rsp.attr_value.value[0] = get_net_state();
-        }else{
-          ESP_LOGI(GATTS_TABLE_TAG, "Read unknown item?!");
+        rsp.attr_value.handle = param->read.handle;
+        rsp.attr_value.len    = 1;
+
+        if (param->read.handle == handle_start + ID_VAL_WIFI) {
+            ESP_LOGI(GATTS_TABLE_TAG, "Reading WIFI state");
+            rsp.attr_value.value[0] = get_net_state();
+        } else {
+            ESP_LOGI(GATTS_TABLE_TAG, "Read unknown item?!");
         }
-        
+
         esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                     ESP_GATT_OK, &rsp);
 

@@ -7,8 +7,8 @@
 /*********************************************************
 *                     TYPEDEFS
 **********************************************************/
-typedef uint32_t state_event_t;   // Which event
-typedef uint32_t state_t;         // Which state in a state machine
+typedef uint32_t state_event_t; // Which event
+typedef uint32_t state_t;       // Which state in a state machine
 
 // Individual state functions in a state machine
 typedef void (*func_ptr)(void);
@@ -17,11 +17,11 @@ typedef void (*func_ptr)(void);
 // for example, if a state has loop_timer set to 1 second, after 1 second
 // of not getting an event, it will run, and so forth.
 typedef struct {
-  // Function pointer to the state
-  func_ptr state_function_pointer;
+    // Function pointer to the state
+    func_ptr state_function_pointer;
 
-  // If non-zero, how many times a second to run a state
-  uint32_t loop_timer;
+    // If non-zero, how many times a second to run a state
+    uint32_t loop_timer;
 
 } state_array_s;
 
@@ -51,7 +51,7 @@ typedef struct {
 
     // This function filters events so a state machine
     // can decide what events to react too
-    bool (*filter_event) (state_event_t);
+    bool (*filter_event)(state_event_t);
 
 } state_init_s;
 

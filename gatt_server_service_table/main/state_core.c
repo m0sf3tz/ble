@@ -5,8 +5,8 @@
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 #include <errno.h>
 
 #include "global_defines.h"
@@ -20,52 +20,52 @@ QueueSetHandle_t events_net_q;
 /**********************************************************
 *                                                TYPEDEFS *
 **********************************************************/
-typedef struct node{
-  struct node     *next;
-  state_init_s    *thread_info;   
-}node_t;
+typedef struct node {
+    struct node*  next;
+    state_init_s* thread_info;
+} node_t;
 
 /**********************************************************
 *                                        STATIC VARIABLES *
 **********************************************************/
-static const char       TAG[] = "STATE_CORE";
-static QueueSetHandle_t incoming_events_q;
-static node_t           *head;
+static const char        TAG[] = "STATE_CORE";
+static QueueSetHandle_t  incoming_events_q;
+static node_t*           head;
 static SemaphoreHandle_t consumer_sem;
 
 /**********************************************************
 *                                               FUNCTIONS *
 **********************************************************/
 
-void add_event_consumer(state_init_s *thread_info) {
-  ESP_LOGI(TAG, "Adding new state machine, name = %s", thread_info->state_name_string);
-  
-  if (pdTRUE != xSemaphoreTake(consumer_sem, SATE_MUTEX_WAIT)) {
-       ESP_LOGE(TAG, "FAILED TO TAKE consumer_sem!");
-       ASSERT(0);
-  }
+void add_event_consumer(state_init_s* thread_info) {
+    ESP_LOGI(TAG, "Adding new state machine, name = %s", thread_info->state_name_string);
 
-  if (head == NULL) {
-    head = malloc(sizeof(node_t));
-    ASSERT(head);
+    if (pdTRUE != xSemaphoreTake(consumer_sem, SATE_MUTEX_WAIT)) {
+        ESP_LOGE(TAG, "FAILED TO TAKE consumer_sem!");
+        ASSERT(0);
+    }
 
-    head->next        = NULL;
-    head->thread_info = thread_info;
-    
+    if (head == NULL) {
+        head = malloc(sizeof(node_t));
+        ASSERT(head);
+
+        head->next        = NULL;
+        head->thread_info = thread_info;
+
+        xSemaphoreGive(consumer_sem);
+        return;
+    }
+
+    node_t* iter = head;
+    while (iter->next != NULL) {
+        iter = iter->next;
+    }
+    iter = malloc(sizeof(node_t));
+    ASSERT(iter);
+
+    iter->next        = NULL;
+    iter->thread_info = thread_info;
     xSemaphoreGive(consumer_sem);
-    return;
-  }
-
-  node_t * iter = head;
-  while(iter->next != NULL){
-    iter = iter->next;
-  }
-  iter = malloc(sizeof(node_t));
-  ASSERT(iter);
-
-  iter->next        = NULL;
-  iter->thread_info = thread_info;
-  xSemaphoreGive(consumer_sem);
 }
 
 // Reads from a global event queue and sends the event
@@ -82,25 +82,25 @@ static void event_multiplexer(void* v) {
         }
 
         ESP_LOGI(TAG, "RXed an event! %d", event);
-       
+
         // Iterate through all the registered event consumers, see if they
-        // signed up for an event, and if so, send the event to them 
+        // signed up for an event, and if so, send the event to them
         if (pdTRUE != xSemaphoreTake(consumer_sem, SATE_MUTEX_WAIT)) {
-             ESP_LOGE(TAG, "FAILED TO TAKE consumer_sem!");
-             ASSERT(0);
+            ESP_LOGE(TAG, "FAILED TO TAKE consumer_sem!");
+            ASSERT(0);
         }
-      
-        node_t * iter = head;
-        while(iter != NULL){
-          if (iter->thread_info->filter_event(event)){
-            ESP_LOGI(TAG, "sending event!");
-            // State machine registered for event, send it!
-            iter->thread_info->send_event(event);
-          }
-          iter = iter->next;
+
+        node_t* iter = head;
+        while (iter != NULL) {
+            if (iter->thread_info->filter_event(event)) {
+                ESP_LOGI(TAG, "sending event!");
+                // State machine registered for event, send it!
+                iter->thread_info->send_event(event);
+            }
+            iter = iter->next;
         }
         xSemaphoreGive(consumer_sem);
-    } 
+    }
 }
 
 static void state_core_init_freertos_objects() {
@@ -135,15 +135,15 @@ static void state_machine(void* arg) {
     for (;;) {
         // Get the current state information
         state_array_s state_info = state_init_ptr->translator(state);
-        uint32_t timeout         = state_info.loop_timer;
-        func_ptr state_func      = state_info.state_function_pointer;
+        uint32_t      timeout    = state_info.loop_timer;
+        func_ptr      state_func = state_info.state_function_pointer;
 
         // Run the current state;
         state_func();
 
         // Wait until a new event comes
         new_event = state_init_ptr->get_event(timeout);
-          
+
         // Recieved an event, see if we need to change state
         state_init_ptr->next_state(&state, new_event);
 
@@ -174,15 +174,15 @@ void start_new_state_machine(state_init_s* state_ptr) {
         ASSERT(0);
     }
 
-    // Sanity check... 
-    if(state_ptr->event_print == NULL || state_ptr->get_event == NULL || state_ptr->next_state == NULL){
-      ESP_LOGE(TAG, "ERROR! state pointer was null!");
-      ASSERT(0);
+    // Sanity check...
+    if (state_ptr->event_print == NULL || state_ptr->get_event == NULL || state_ptr->next_state == NULL) {
+        ESP_LOGE(TAG, "ERROR! state pointer was null!");
+        ASSERT(0);
     }
-    
-    if(state_ptr->send_event == NULL || state_ptr->translator == NULL){
-      ESP_LOGE(TAG, "ERROR! state pointer was null!");
-      ASSERT(0);
+
+    if (state_ptr->send_event == NULL || state_ptr->translator == NULL) {
+        ESP_LOGE(TAG, "ERROR! state pointer was null!");
+        ASSERT(0);
     }
 
     // Register new state machine with event multiplexer
@@ -192,7 +192,7 @@ void start_new_state_machine(state_init_s* state_ptr) {
     BaseType_t rc = xTaskCreate(state_machine,
                                 state_ptr->state_name_string,
                                 4096,
-                                (void*) state_ptr,
+                                (void*)state_ptr,
                                 4,
                                 NULL);
 

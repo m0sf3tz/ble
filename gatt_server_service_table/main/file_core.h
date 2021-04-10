@@ -32,24 +32,24 @@
 #define NVS_CHUNK (0)
 
 #define MAX_MTU_SIZE (512)
-#define CRC_LEN      (2)   //protects a provision chunk  
+#define CRC_LEN      (2) //protects a provision chunk
 
 /* The provision chunk will ALLWAYS
    be this size, variable items (PW, etc)
    will be NULL padded to this size. This
    makes packing unpacking simpler.
    KEEP in sync with below!! */
-#define IP_LEN            (4)   //IPv4 only
-#define SSID_LEN          (100) //NULL terminated
-#define PW_LEN            (100) //NULL terminated
-#define API_LEN           (64)
-#define DEVICE_ID_LEN     (4)
+#define IP_LEN        (4)   //IPv4 only
+#define SSID_LEN      (100) //NULL terminated
+#define PW_LEN        (100) //NULL terminated
+#define API_LEN       (64)
+#define DEVICE_ID_LEN (4)
 
-#define IP_OFFSET            (0                     ) 
-#define SSID_OFFSET          (IP_LEN                )
-#define PW_OFFSET            (SSID_OFFSET + SSID_LEN)
-#define API_OFFSET           (PW_OFFSET   + PW_LEN  )
-#define DEVICE_ID_OFFSET     (API_OFFSET  + API_LEN )
+#define IP_OFFSET        (0)
+#define SSID_OFFSET      (IP_LEN)
+#define PW_OFFSET        (SSID_OFFSET + SSID_LEN)
+#define API_OFFSET       (PW_OFFSET + PW_LEN)
+#define DEVICE_ID_OFFSET (API_OFFSET + API_LEN)
 
 #define IP_KEY     (0)
 #define SSID_KEY   (1)
