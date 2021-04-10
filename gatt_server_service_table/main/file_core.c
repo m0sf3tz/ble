@@ -16,7 +16,7 @@
 #include "global_defines.h"
 
 /**********************************************************
-*              MASTER CORE STATIC VARIABLES
+*                                        STATIC VARIABLES *
 **********************************************************/
 static const char TAG[] = "FILE_CORE";
 
@@ -59,27 +59,27 @@ static const unsigned short crc16tab[256] = {
 };
 
 /**********************************************************
-*              FILE CORE GLOBAL VARIABLES
+*                                        GLOBAL VARIABLES *
 **********************************************************/
 
 /**********************************************************
-*                  FILE CORE FUNCTIONS
+*                                        STATIC FUNCTIONS *
 **********************************************************/
-
-
 static uint16_t crc16(uint8_t* buf, size_t len) {
-    int      counter;
-    uint16_t crc = 0xDEAD;
- 
-  if (!buf){
-        ESP_LOGE(TAG, "CRC calc buff null!");
-        ASSERT(0);
-    }
+  ESP_LOGI(TAG, "Calculating CRC for len %d", len);
+  
+  int      counter;
+  uint16_t crc = 0xBEEF;
 
-   for (counter = 0; counter < len; counter++) {
-        crc = (crc << 8) ^ crc16tab[((crc >> 8) ^ buf[counter]) & 0x00FF];
-    }
-    return crc;
+  if (!buf){
+    ESP_LOGE(TAG, "CRC buf null!");
+    ASSERT(0);
+  }
+
+  for (counter = 0; counter < len; counter++) {
+    crc = (crc << 8) ^ crc16tab[((crc >> 8) ^ buf[counter]) & 0x00FF];
+  }
+  return crc;
 }
 
 static void file_core_init_freertos_objects() {
@@ -203,125 +203,26 @@ static int file_core_get(int item, void* data) {
     return 0;
 }
 
-int verify_nvs_required_items() {
-    /*
-  uint64_t device_id;
-    int      ret_deviceid = file_core_get(NVS_DEVICE_ID, &device_id);
-
-    char ssid_name[MAX_SSID_LEN];
-    int  ret_ssid_name = file_core_get(NVS_SSID_NAME, ssid_name);
-
-    char ssid_pw[MAX_PW_LEN];
-    int  ret_ssid_pw = file_core_get(NVS_SSID_PW, ssid_pw);
-
-    char ip[MAX_IP_LEN];
-    int  ret_ip = file_core_get(NVS_IP, ip);
-
-    uint16_t port;
-    int      ret_port = file_core_get(NVS_PORT, &port);
-
-    char device_name[MAX_DEVICE_NAME];
-    int  ret_device_name = file_core_get(NVS_DEVICE_NAME, device_name);
-
-    //check if this is the first time we are runnig (the BRICKED value will not be set..)
-    uint8_t bricked;
-    int  ret_bricked = file_core_get(NVS_BRICKED, &bricked);
-    
-      ESP_LOGI(TAG, "Bricked = %hhu, err = %d",bricked, ret_bricked);
-    if(ret_bricked ==  ITEM_NOT_INITILIZED) {
-      ESP_LOGI(TAG, "First time running device, setting bricked code to 0");
-      bricked = 0;
-      ret_bricked = file_core_set(NVS_BRICKED, &bricked);
-      if (ret_bricked != ESP_OK){
-        ESP_LOGE(TAG, "Could not set Value of briked on the first run?!");
-        ASSERT(0);
-      }
-    }
-
-    if (ret_deviceid || ret_ssid_name || ret_ssid_pw || ret_ip || ret_port || ret_device_name) {
-        return 0;
-    } else {
-        return 1;
-    }
-*/
-    return 1;
-}
-
-void file_core_print_details() {
-    /*
-    uint64_t device_id;
-    int      ret_deviceid = file_core_get(NVS_DEVICE_ID, &device_id);
-
-    char ssid_name[MAX_SSID_LEN];
-    int  ret_ssid_name = file_core_get(NVS_SSID_NAME, ssid_name);
-
-    char ssid_pw[MAX_PW_LEN];
-    int  ret_ssid_pw = file_core_get(NVS_SSID_PW, ssid_pw);
-
-    char ip[MAX_IP_LEN];
-    int  ret_ip = file_core_get(NVS_IP, ip);
-
-    uint16_t port;
-    int      ret_port = file_core_get(NVS_PORT, &port);
-
-    char device_name[MAX_DEVICE_NAME];
-    int  ret_device_name = file_core_get(NVS_DEVICE_NAME, device_name);
-
-    if (ret_deviceid == ITEM_GOOD) {
-        ESP_LOGI(TAG, "device id %u", (uint32_t)device_id);
-    } else {
-        ESP_LOGE(TAG, "device id not set!");
-    }
-
-    if (ret_ssid_name == ITEM_GOOD) {
-        ESP_LOGI(TAG, "ssid name == %s", ssid_name);
-    } else {
-        ESP_LOGE(TAG, "ssid name not set!");
-    }
-
-    if (ret_ssid_pw == ITEM_GOOD) {
-        ESP_LOGI(TAG, "pw == %s", ssid_pw);
-    } else {
-        ESP_LOGE(TAG, "pw not set!");
-    }
-
-    if (ret_ip == ITEM_GOOD) {
-        ESP_LOGI(TAG, "ip == %s", ip);
-    } else {
-        ESP_LOGE(TAG, "IP not set!");
-    }
-
-    if (ret_port == ITEM_GOOD) {
-        ESP_LOGI(TAG, "port == %hu", port);
-    } else {
-        ESP_LOGE(TAG, "port not set!");
-    }
-
-    if (ret_device_name == ITEM_GOOD) {
-        ESP_LOGI(TAG, "device_name == %s", device_name);
-    } else {
-        ESP_LOGE(TAG, "device name not set!");
-    }
-*/
-}
-
-void fetch_nvs(commandQ_file_t* commandQ_cmd) {
-    if (!commandQ_cmd) {
-        ESP_LOGE(TAG, "PARAM NULL!");
-        ASSERT(0);
-    }
-
-    ESP_LOGI(TAG, "fetching from memory!");
-    file_core_get(NVS_CHUNK, commandQ_cmd);
-}
-
 static void update_nvs(commandQ_file_t* commandQ_cmd) {
+    uint16_t crc16_calc     = 0;
+    uint16_t crc16_expected = 0;
+
     if (!commandQ_cmd) {
         ESP_LOGE(TAG, "PARAM NULL!");
         ASSERT(0);
     }
 
-    ESP_LOGI(TAG, "Commiting command to memory!");
+    crc16_expected = commandQ_cmd->crc_16;
+    crc16_calc = crc16(commandQ_cmd->provision_chunk, PROVISION_CHUNK_SIZE);
+    ESP_LOGI(TAG, "CRC16(calculated) == %hu, CRC16(expected) == %hu", crc16_calc, crc16_expected);
+
+    if(crc16_calc != crc16_expected){
+      ESP_LOGE(TAG, "Error! Won't commit! CRC ERROR!");
+      return;
+    } else {
+      ESP_LOGI(TAG, "CRC GOOD!");
+    }
+
     file_core_set(NVS_CHUNK, commandQ_cmd);
 }
 
@@ -337,13 +238,57 @@ static void file_thread(void* ptr) {
             ASSERT(0);
         }
 
-        ESP_LOGI(TAG, "recived a command for file_core!");
+        ESP_LOGI(TAG, "received a command for file_core!");
 
         // we only expect to get one type of command - and that's a command to commit to memory
         // we won't check for an error, but when the phone reads back to verify the write it will
         // see the failure then
         update_nvs(&commandQ_cmd);
     }
+}
+
+/**********************************************************
+*                                        GLOBAL FUNCTIONS *
+**********************************************************/
+// If device is provisioned, breaks down the blob and 
+// returns a particular value based on a key IE,
+// Key -> IP_KEY, fetches the IP value from the blob
+int get_provision_item(char* dest, uint8_t key){
+  int rc;
+  uint8_t buf[PROVISION_CHUNK_SIZE];
+
+  if(!dest){
+     ESP_LOGE(TAG, "PARAM NULL!");
+     ASSERT(0);
+  }
+
+  if(key > MAX_KEY){
+     ESP_LOGE(TAG, "KEY WRONG!");
+     ASSERT(0);
+  }
+
+  memset(buf, 0, PROVISION_CHUNK_SIZE);
+
+  ESP_LOGI(TAG, "fetching from memory!");
+  rc = file_core_get(NVS_CHUNK, buf);
+  if (rc != ITEM_GOOD){
+    return rc;
+  }
+
+  switch(key){
+    case(IP_KEY):
+      memcpy(dest, buf, IP_LEN);
+      return ITEM_GOOD;
+    case(SSID_KEY):
+      memcpy(dest, buf + SSID_OFFSET, SSID_LEN);
+      return ITEM_GOOD;
+    case(PW_KEY):
+      memcpy(dest, buf + PW_OFFSET, PW_LEN);
+      return ITEM_GOOD;
+    default:
+      ESP_LOGE(TAG, "Key not handled...");
+      ASSERT(0);
+  }
 }
 
 BaseType_t equeue_write(commandQ_file_t* commandQ_cmd) {

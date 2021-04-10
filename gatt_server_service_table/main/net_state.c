@@ -18,18 +18,18 @@
 #include "wifi_state.h"
 
 /*********************************************************
-*                  STATIC VARIABLES
-**********************************************************/
+*                                       STATIC VARIABLES *
+*********************************************************/
 static const char TAG[] = "NET_STATE";
 static SemaphoreHandle_t  net_state_mutex;
 static bool net_state;
 
 /**********************************************************
-*                 FORWARD DECLARATIONS 
+*                                    FORWARD DECLARATIONS *
 **********************************************************/
 
-/*********************************************************
-*                   STATE FUNCTIONS
+/**********************************************************
+*                                         STATE FUNCTIONS *
 **********************************************************/
 static void state_wait_for_wifi_func() {
     ESP_LOGI(TAG, "Entering wait_for_wifi state");
@@ -101,6 +101,14 @@ static state_array_s get_state_func(state_t current_state) {
     return func_table[current_state];
 }
 
+static void send_event_func(state_event_t event) {
+    BaseType_t xStatus = xQueueSendToBack(events_net_q, &event, NET_SATE_QUEUE_TO);
+    if (xStatus != pdTRUE){
+      ESP_LOGE(TAG, "Failed to send on event queue (net)");
+      ASSERT(0);
+    }
+}
+
 static state_event_t get_event_func(uint32_t timeout) {
     state_event_t new_event = INVALID_EVENT;
     xQueueReceive(events_net_q, &new_event, timeout);
@@ -138,15 +146,17 @@ static void net_state_init_freertos_objects() {
 }
 
 static bool event_filter_func(state_event_t event) {
-  return false;
+  return true;
 }
 
 state_init_s * get_net_state_handle(){
     static state_init_s net_state = {
         .next_state        = next_state_func,
+        .send_event        = send_event_func,
         .get_event         = get_event_func,
         .translator        = get_state_func,
         .event_print       = event_print_func,
+        .starting_state    = net_waiting_wifi, 
         .state_name_string = "net_state",
         .filter_event      = event_filter_func,
     };

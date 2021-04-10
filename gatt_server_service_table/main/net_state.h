@@ -34,4 +34,5 @@ typedef enum {
 **********************************************************/
 #define MAX_QUEUE_DEPTH    (16)
 #define INVALID_EVENT      (0xFFFFFFFF)
-#define NET_SATE_MUTEX_WAIT (5000 / portTICK_PERIOD_MS)
+#define NET_SATE_MUTEX_WAIT (2500 / portTICK_PERIOD_MS)
+#define NET_SATE_QUEUE_TO   (2500 / portTICK_PERIOD_MS)

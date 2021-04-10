@@ -15,59 +15,31 @@
 #include "wifi_state.h"
 
 
-uint8_t * compressor(){
-  uint8_t buf = malloc(256);
-  memset(buf, 0 , 256);
-  static char ssid_name[100] = "whoops";
-  static char ssid_pw[100]   = "balls";
-
-  memmove(buf         , ssid_name, 100);
-  memmove(buf + PW_LEN, ssid_pw  , 100);
-  
-  return buf;
-}
-
-void splitter(uint8_t * buf){
-  uint8_t name[100];
-  memset(buf, 0, 100);
-
-  memcpy(name, buf, 100);
-
-  printf("Name = %s", name);
-}
-
-
 int app_main() {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-
-
-
-//    net_state_spawner();
-
-    // should be spawned last
- //   state_core_spawner();
-/*
-    ble_init();
+    state_core_spawner();
+    net_state_spawner();
+    
+    //ble_init();
     file_core_spawner();
 
-    while(true){
-    state_post_event(wifi_connect);
+    static commandQ_file_t foobar;
+    memset(&foobar, 0, sizeof(foobar));
+    equeue_write(&foobar);
     
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-    
-    state_post_event(wifi_disconnect);
-    
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-    }
-*/
 
-  //  while(true){
-    //      state_post_event(wifi_connect);
+    while(true){
+      state_post_event(wifi_connect);
     
-      //    vTaskDelay(500 / portTICK_PERIOD_MS);
-       // }
+      vTaskDelay(10000 / portTICK_PERIOD_MS);
+    
+      state_post_event(wifi_disconnect);
+    
+      vTaskDelay(10000 / portTICK_PERIOD_MS);
+    }
+
     return (0);
 }
