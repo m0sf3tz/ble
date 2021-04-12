@@ -22,9 +22,9 @@ int app_main() {
     state_core_spawner();
     net_state_spawner();
 
-    //ble_init();
+    ble_init();
     file_core_spawner();
-
+/*
     static commandQ_file_t foobar;
     memset(&foobar, 0, sizeof(foobar));
     equeue_write(&foobar);
@@ -38,6 +38,6 @@ int app_main() {
 
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
-
+*/
     return (0);
 }
