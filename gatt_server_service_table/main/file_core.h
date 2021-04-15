@@ -39,26 +39,20 @@
    will be NULL padded to this size. This
    makes packing unpacking simpler.
    KEEP in sync with below!! */
-#define IP_LEN        (4)   //IPv4 only
 #define SSID_LEN      (100) //NULL terminated
 #define PW_LEN        (100) //NULL terminated
 #define API_LEN       (64)
-#define DEVICE_ID_LEN (4)
 
-#define IP_OFFSET        (0)
-#define SSID_OFFSET      (IP_LEN)
+#define SSID_OFFSET      (0)
 #define PW_OFFSET        (SSID_OFFSET + SSID_LEN)
 #define API_OFFSET       (PW_OFFSET + PW_LEN)
-#define DEVICE_ID_OFFSET (API_OFFSET + API_LEN)
 
-#define IP_KEY     (0)
-#define SSID_KEY   (1)
-#define PW_KEY     (2)
-#define API_KEY    (3)
-#define DEVICE_KEY (4)
-#define MAX_KEY    (5) // keep as last!
+#define SSID_KEY   (0)
+#define PW_KEY     (1)
+#define API_KEY    (2)
+#define MAX_KEY    (3) // keep as last!
 
-#define PROVISION_CHUNK_SIZE (IP_LEN + SSID_LEN + PW_LEN + API_LEN + DEVICE_ID_LEN)
+#define PROVISION_CHUNK_SIZE (SSID_LEN + PW_LEN + API_LEN)
 
 /*********************************************************
 *                                               TYPEDEFS *

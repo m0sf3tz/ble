@@ -6,6 +6,7 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"math/rand"
+	"time"
 )
 
 const API_KEY_LEN = 64
@@ -52,6 +53,7 @@ func generate_api_key() string {
 	loop_count := 0
 	api_key := randSeq(API_KEY_LEN)
 	for {
+		fmt.Println(api_key)
 		row := db.QueryRow(`SELECT COUNT(*) FROM users WHERE api_key = $1`, api_key)
 		var count int
 		err := row.Scan(&count)
@@ -59,7 +61,6 @@ func generate_api_key() string {
 			fmt.Println(err)
 		}
 
-		fmt.Println(count)
 		if count == 0 {
 			break
 		}
@@ -99,5 +100,8 @@ func db_put(email, lat, long, api_key string) bool {
 }
 
 func db_init() {
+	// init the random seed used to generate API keys
+	rand.Seed(time.Now().UnixNano())
+
 	db_connect()
 }

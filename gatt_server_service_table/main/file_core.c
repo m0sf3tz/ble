@@ -251,8 +251,7 @@ static void file_thread(void* ptr) {
 *                                        GLOBAL FUNCTIONS *
 **********************************************************/
 // If device is provisioned, breaks down the blob and
-// returns a particular value based on a key IE,
-// Key -> IP_KEY, fetches the IP value from the blob
+// returns a particular value based on a key 
 int get_provision_item(char* dest, uint8_t key) {
     int     rc;
     uint8_t buf[PROVISION_CHUNK_SIZE];
@@ -276,9 +275,6 @@ int get_provision_item(char* dest, uint8_t key) {
     }
 
     switch (key) {
-    case (IP_KEY):
-        memcpy(dest, buf, IP_LEN);
-        return ITEM_GOOD;
     case (SSID_KEY):
         memcpy(dest, buf + SSID_OFFSET, SSID_LEN);
         return ITEM_GOOD;

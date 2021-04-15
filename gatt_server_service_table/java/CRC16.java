@@ -34,14 +34,65 @@ public class CRC16 {
 		0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 
 	};
 
-    public static void main(String[] args) {
-        byte myArg[] = new byte[272];
 
-        int crc = 0xBEEF;
-        for (byte b : myArg) {
-          crc = ( ( ( (crc << 8) ) ^ table[((crc >> 8) ^ b) & 0x00FF] ) & 0xFFFF);
-        }
-        System.out.println("CRC16 = " + Integer.toHexString(crc));
+    public static byte[] createProvisionBlob(){
+      String wifiSsid, wifiPassword, apiKey;  
+      byte blobNoCrc[] = new byte[272-4];
+      byte blobCrc[]   = new byte[272];
+
+      wifiSsid     = "test";
+      wifiPassword = "password";
+      apiKey       = "apiKey";
+
+      System.arraycopy(wifiSsid.getBytes(), 
+                       0,
+                       blobNoCrc,
+                       0,
+                       wifiSsid.getBytes().length);
+      
+      System.arraycopy(wifiPassword.getBytes(), 
+                       0,
+                       blobNoCrc,
+                       100,
+                       wifiPassword.getBytes().length);
+
+      System.arraycopy(apiKey.getBytes(), 
+                       0,
+                       blobNoCrc,
+                       200,
+                       apiKey.getBytes().length);
+      byte[] crc = getCrc(blobNoCrc);
+
+      // Create new array = CRC[0:3] + [4:]
+      System.arraycopy(crc, 
+                       0,
+                       blobCrc,
+                       0,
+                       crc.length);
+      
+      System.arraycopy(blobNoCrc, 
+                       0,
+                       blobCrc,
+                       2,
+                       blobNoCrc.length);
+      return blobCrc;
+    }
+
+    public static byte[] getCrc(byte[] chunk){
+     int crc = 0xBEEF;
+      for (byte b : chunk) {
+         crc = ( ( ( (crc << 8) ) ^ table[((crc >>> 8) ^ b) & 0x00FF] ) & 0xFFFF);
+      }
+      System.out.println("CRC16 = " + Integer.toHexString(crc));
+  
+      // Get the CRC in bytes!
+      return new byte[] {
+               (byte)(crc >>> 8),
+               (byte)crc};
+    }
+
+    public static void main(String[] args) {
+      createProvisionBlob();
     }
 }
 

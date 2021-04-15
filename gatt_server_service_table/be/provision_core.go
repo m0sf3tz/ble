@@ -3,30 +3,36 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"time"
+	_ "time"
 )
 
-func update_temp_user_cache(b []byte) bool {
-	var m Temp_partial_user_info
-	err := json.Unmarshal(b, &m)
-	fmt.Println(m)
-	if err != nil {
-		return false
-	}
+type User_created_get_response struct {
+	Api_key string
+}
 
-	if m.Email == "" || m.Rand == 0 {
+func update_temp_user_cache(user Temp_partial_user_info) bool {
+	if user.Email == "" {
 		fmt.Println("NULL args!")
 		return false
 	}
 
-	transactions_append(m)
+	transactions_append(user)
 	return true
 }
 
-func get_new_api_key() {
+func create_get_request_response(api_key string) ([]byte, bool) {
+	var response User_created_get_response
+	response.Api_key = api_key
+	b, err := json.Marshal(response)
 
+	if err != nil {
+		fmt.Println("Failed to write...")
+		return nil, false
+	}
+	return b, true
 }
 
+/*
 func main_test() {
 	init_user_cache()
 	db_init()
@@ -46,4 +52,4 @@ func main_test() {
 		fmt.Println("Failed to insert new value")
 	}
 	time.Sleep(time.Second * 30)
-}
+}*/

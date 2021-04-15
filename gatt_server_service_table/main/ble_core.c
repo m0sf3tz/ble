@@ -305,6 +305,7 @@ void example_exec_write_event_env(prepare_type_env_t* prepare_write_env, esp_ble
         free(prepare_write_env->prepare_buf);
         prepare_write_env->prepare_buf = NULL;
     }
+    /* send response when param->write.need_rsp is true*/
     prepare_write_env->prepare_len = 0;
 }
 
@@ -417,6 +418,11 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         // the length of gattc prepare write data must be less than GATTS_DEMO_CHAR_VAL_LEN_MAX.
         ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT");
         example_exec_write_event_env(&prepare_write_env, param);
+
+        if (param->write.need_rsp) {
+            ESP_LOGI(GATTS_TABLE_TAG, "Sending back ACK!");
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        }
         break;
     case ESP_GATTS_MTU_EVT:
         ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
@@ -546,7 +552,7 @@ void ble_init(void) {
         return;
     }
 
-    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(29);
+    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
     if (local_mtu_ret) {
         ESP_LOGE(GATTS_TABLE_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
