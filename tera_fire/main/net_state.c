@@ -23,6 +23,7 @@
 static const char        TAG[] = "NET_STATE";
 static SemaphoreHandle_t net_state_mutex;
 static bool              net_state;
+QueueSetHandle_t         events_net_q;
 
 /**********************************************************
 *                                    FORWARD DECLARATIONS *
@@ -53,7 +54,7 @@ static void next_state_func(state_t* curr_state, state_event_t event) {
         ESP_LOGE(TAG, "ARG= NULL!");
         ASSERT(0);
     }
-
+#if 0
     if (*curr_state == net_waiting_wifi) {
         if (event == wifi_connect) {
             ESP_LOGI(TAG, "Old State: net_waiting_wifi, Next: net_waiting_prov");
@@ -68,12 +69,13 @@ static void next_state_func(state_t* curr_state, state_event_t event) {
             *curr_state = net_waiting_wifi;
         }
     }
-
+#endif 
     // Stay in the same state
 }
 
-char* event_print_func(state_event_t event) {
-    switch (event) {
+static char* event_print_func(state_event_t event) {
+#if 0 
+  switch (event) {
     case (wifi_disconnect):
         return "wifi_disconnect";
         break;
@@ -81,25 +83,26 @@ char* event_print_func(state_event_t event) {
         return "wifi_connect";
         break;
     }
+#endif 
     // event not targeted at this state machine
     return NULL;
 }
 
 // Returns the state function, given a state
-static state_array_s get_state_func(state_t current_state) {
+static state_array_s get_state_func(state_t state) {
     static state_array_s func_table[net_state_len] = {
-        //{      (state function)           , looper time },
-        { state_wait_for_wifi_func, portMAX_DELAY },
-        { state_wait_for_provisions_func, 1000 / portTICK_PERIOD_MS },
-        { state_upload_data_func, 2000 / portTICK_PERIOD_MS },
+        //{      (state function)       , looper time },
+        { state_wait_for_wifi_func      , portMAX_DELAY },
+        { state_wait_for_provisions_func, 2500 / portTICK_PERIOD_MS },
+        { state_upload_data_func        , 2500 / portTICK_PERIOD_MS },
     };
 
-    if (current_state >= net_state_len) {
+    if (state >= net_state_len) {
         ESP_LOGE(TAG, "Current state out of bounds!");
         ASSERT(0);
     }
 
-    return func_table[current_state];
+    return func_table[state];
 }
 
 static void send_event_func(state_event_t event) {
@@ -141,16 +144,18 @@ bool get_net_state() {
 
 static void net_state_init_freertos_objects() {
     net_state_mutex = xSemaphoreCreateMutex();
+    events_net_q    = xQueueCreate(EVENT_QUEUE_MAX_DEPTH, sizeof(state_event_t)); // state-core     -> net-sm
 
     // make sure we init all the rtos objects
     ASSERT(net_state_mutex);
+    ASSERT(events_net_q);
 }
 
 static bool event_filter_func(state_event_t event) {
     return true;
 }
 
-state_init_s* get_net_state_handle() {
+static state_init_s* get_net_state_handle() {
     static state_init_s net_state = {
         .next_state        = next_state_func,
         .send_event        = send_event_func,

@@ -223,7 +223,7 @@ static void update_nvs(commandQ_file_t* commandQ_cmd) {
         ESP_LOGI(TAG, "CRC GOOD!");
     }
 
-    file_core_set(NVS_CHUNK, commandQ_cmd);
+    file_core_set(NVS_CHUNK, commandQ_cmd->provision_chunk);
 }
 
 static void file_thread(void* ptr) {

@@ -15,7 +15,6 @@
 /**********************************************************
 *                                        GLOBAL VARIABLES *
 **********************************************************/
-QueueSetHandle_t events_net_q;
 
 /**********************************************************
 *                                                TYPEDEFS *
@@ -106,12 +105,10 @@ static void event_multiplexer(void* v) {
 static void state_core_init_freertos_objects() {
     //Reads and Pushes events from state-machines
     incoming_events_q = xQueueCreate(EVENT_QUEUE_MAX_DEPTH, sizeof(state_event_t)); // state-machines -> state-core
-    events_net_q      = xQueueCreate(EVENT_QUEUE_MAX_DEPTH, sizeof(state_event_t)); // state-core     -> net-sm
     consumer_sem      = xSemaphoreCreateMutex();
 
     // make sure nothing is NULL!
     ASSERT(incoming_events_q);
-    ASSERT(events_net_q);
     ASSERT(consumer_sem);
 }
 
@@ -132,6 +129,7 @@ static void state_machine(void* arg) {
     state_init_s* state_init_ptr = (state_init_s*)(arg);
     state_t       state          = state_init_ptr->starting_state;
     state_event_t new_event;
+    
     for (;;) {
         // Get the current state information
         state_array_s state_info = state_init_ptr->translator(state);

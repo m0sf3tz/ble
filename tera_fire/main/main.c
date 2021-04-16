@@ -13,17 +13,24 @@
 #include "net_state.h"
 #include "state_core.h"
 #include "wifi_state.h"
+#include "wifi_core.h"
 
 int app_main() {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    state_core_spawner();
-    net_state_spawner();
 
     ble_init();
     file_core_spawner();
+
+    test_wifi();
+    
+
+    state_core_spawner();
+    //net_state_spawner();
+    //wifi_state_spawner();
+
 /*
     static commandQ_file_t foobar;
     memset(&foobar, 0, sizeof(foobar));

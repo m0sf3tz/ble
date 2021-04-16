@@ -14,6 +14,8 @@
 #include "ble_core.h"
 #include "file_core.h"
 #include "net_state.h"
+#include "state_core.h"
+#include "wifi_state.h"
 
 #define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
 
@@ -301,7 +303,8 @@ void example_exec_write_event_env(prepare_type_env_t* prepare_write_env, esp_ble
         // commit this value to NVS (for the case the MTU was LESS than the size of the data)
         ESP_LOGI(GATTS_TABLE_TAG, "Commiting to memory!");
         equeue_write(prepare_write_env->prepare_buf);
-
+        state_post_event(wifi_new_provision_event); 
+        
         free(prepare_write_env->prepare_buf);
         prepare_write_env->prepare_buf = NULL;
     }

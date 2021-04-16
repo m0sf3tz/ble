@@ -1,3 +1,0 @@
-curl -H "Accept: application/xml" -H "Content-Type: application/xml" -X GET -d '{"Rand":34234}' http://192.168.0.189:3000/api/provision_finalize/
-curl -H "Content-Type: application/json"   --request POST   --data '{"Email":"xyz","Long":"xyz", "Rand":34234}'   http://192.168.0.189:3000/api/provision_request/
-

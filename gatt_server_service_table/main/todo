@@ -1,2 +1,0 @@
-update both writes and prep writes to use the proper nvs
-  -> normal write, make sure buffer is properly sized.
