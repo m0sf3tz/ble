@@ -1,3 +1,4 @@
-curl -H "Accept: application/xml" -H "Content-Type: application/xml" -X GET -d '{"Rand":34234}' http://192.168.0.189:3000/api/provision_finalize/
-curl -H "Content-Type: application/json"   --request POST   --data '{"Email":"xyz","Long":"xyz", "Rand":34234}'   http://192.168.0.189:3000/api/provision_request/
+curl -G --data-urlencode 'Rand=sdfasdfasfasdf' http://192.168.0.189:3000/api/provision_finalize/ -vi
+curl -G --data-urlencode 'api_key=2hPQRDNGBkISbA6pYWhjoh3UplA7T4YFbAtxopbTWurc2tNrCnCgVsLdpXGDroCB' http://192.168.0.189:3000/api/validate_api_key/ -vi
+curl -H "Content-Type: application/json"   --request POST   --data '{"Email":"xyz","Long":"xyz", "Rand":"fuck"}'   http://192.168.0.189:3000/api/provision_request/
 

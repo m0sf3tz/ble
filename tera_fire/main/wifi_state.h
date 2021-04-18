@@ -23,8 +23,7 @@ void wifi_state_spawner();
                                         in namespace          \
                                       */
 
-
-#define WIFI_STATE_QUEUE_TO   (2500 / portTICK_PERIOD_MS)
+#define WIFI_STATE_QUEUE_TO (2500 / portTICK_PERIOD_MS)
 /*********************************************************
 *                                                 ENUMS  *
 *********************************************************/
@@ -35,7 +34,6 @@ typedef enum {
     wifi_event_len //LEAVE AS LAST!
 } wifi_event_e;
 
-
 typedef enum {
     wifi_waiting_provision_state = 0,
     wifi_connecting_state,
@@ -43,4 +41,3 @@ typedef enum {
 
     wifi_state_len //LEAVE AS LAST!
 } wifi_state_e;
-

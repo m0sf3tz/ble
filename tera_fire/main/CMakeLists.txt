@@ -5,4 +5,6 @@ idf_component_register(SRCS "state_core.c"
                             "wifi_state.c"
                             "wifi_core.c"
                             "net_state.c"
+                            "packet_core.c"
+                            "http_core.c"
                             INCLUDE_DIRS ".")

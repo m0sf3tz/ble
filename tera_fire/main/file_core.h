@@ -39,18 +39,18 @@
    will be NULL padded to this size. This
    makes packing unpacking simpler.
    KEEP in sync with below!! */
-#define SSID_LEN      (100) //NULL terminated
-#define PW_LEN        (100) //NULL terminated
-#define API_LEN       (64)
+#define SSID_LEN (100) //NULL terminated
+#define PW_LEN   (100) //NULL terminated
+#define API_LEN  (64)
 
-#define SSID_OFFSET      (0)
-#define PW_OFFSET        (SSID_OFFSET + SSID_LEN)
-#define API_OFFSET       (PW_OFFSET + PW_LEN)
+#define SSID_OFFSET (0)
+#define PW_OFFSET   (SSID_OFFSET + SSID_LEN)
+#define API_OFFSET  (PW_OFFSET + PW_LEN)
 
-#define SSID_KEY   (0)
-#define PW_KEY     (1)
-#define API_KEY    (2)
-#define MAX_KEY    (3) // keep as last!
+#define SSID_KEY (0)
+#define PW_KEY   (1)
+#define API_KEY  (2)
+#define MAX_KEY  (3) // keep as last!
 
 #define PROVISION_CHUNK_SIZE (SSID_LEN + PW_LEN + API_LEN)
 
@@ -67,5 +67,5 @@ typedef struct {
 **********************************************************/
 void       fetch_nvs(commandQ_file_t* commandQ_cmd);
 void       file_core_spawner(void);
-BaseType_t equeue_write(commandQ_file_t* commandQ_cmd);
+BaseType_t enqueue_write(void* commandQ_cmd);
 int        get_provision_item(char* dest, uint8_t key);

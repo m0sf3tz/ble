@@ -21,7 +21,7 @@ const (
 
 var db *sql.DB
 
-var letters = []byte("!@#$%^&*()+-*123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letters = []byte("123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 // to generate API key
 // Note: not cryptographically secure!
@@ -49,21 +49,30 @@ func db_connect() {
 	}
 }
 
+func api_key_in_db(api_key string) bool {
+	row := db.QueryRow(`SELECT COUNT(*) FROM users WHERE api_key = $1`, api_key)
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if count == 0 {
+		// API is NOT in database
+		return false
+	}
+	return true
+}
+
 func generate_api_key() string {
 	loop_count := 0
 	api_key := randSeq(API_KEY_LEN)
-	for {
-		fmt.Println(api_key)
-		row := db.QueryRow(`SELECT COUNT(*) FROM users WHERE api_key = $1`, api_key)
-		var count int
-		err := row.Scan(&count)
-		if err != nil {
-			fmt.Println(err)
-		}
 
-		if count == 0 {
+	for {
+		api_in_db := api_key_in_db(api_key)
+		if !api_in_db {
 			break
 		}
+
 		// try a new API key
 		api_key = randSeq(API_KEY_LEN)
 		loop_count++
@@ -97,6 +106,30 @@ func db_put(email, lat, long, api_key string) bool {
 		log.Fatal(err2)
 	}
 	return true
+}
+
+func db_update_post(api_key string, sensor_reading []byte) {
+	_, err := db.Exec(`update users set post_stamp = $1, sensor_reading = $2 where api_key = $3;`, time.Now().Unix(), sensor_reading, api_key)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func db_get_sensor_reading(api_key string) ([]byte, int, bool) {
+	var post_stamp int
+	var bytea []byte
+
+	row := db.QueryRow(`select sensor_reading, post_stamp from users where api_key = $1;`, api_key)
+	switch err := row.Scan(&bytea, &post_stamp); err {
+	case sql.ErrNoRows:
+		fmt.Println("No such user exists!")
+		return nil, 0, false
+	case nil:
+		return bytea, post_stamp, true
+	default:
+		fmt.Println("Could not fetch details", err)
+		return nil, 0, false
+	}
 }
 
 func db_init() {

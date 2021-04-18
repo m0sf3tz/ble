@@ -10,41 +10,36 @@
 
 #include "ble_core.h"
 #include "file_core.h"
+#include "http_core.h"
 #include "net_state.h"
+#include "packet_core.h"
 #include "state_core.h"
-#include "wifi_state.h"
 #include "wifi_core.h"
+#include "wifi_state.h"
 
 int app_main() {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-
     ble_init();
     file_core_spawner();
 
-    test_wifi();
-    
-
     state_core_spawner();
-    //net_state_spawner();
-    //wifi_state_spawner();
+    net_state_spawner();
+    wifi_state_spawner();
 
-/*
-    static commandQ_file_t foobar;
-    memset(&foobar, 0, sizeof(foobar));
-    equeue_write(&foobar);
+    vTaskDelay(30000 / portTICK_PERIOD_MS);
+    ESP_LOGI("TAG", "posting!");
+    http_test();
+
+    char test[700];
 
     while (true) {
-        state_post_event(wifi_connect);
-
         vTaskDelay(10000 / portTICK_PERIOD_MS);
-
-        state_post_event(wifi_disconnect);
-
+        create_packet(test);
+        http_test();
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
-*/
     return (0);
 }

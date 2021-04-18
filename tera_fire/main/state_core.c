@@ -56,14 +56,16 @@ void add_event_consumer(state_init_s* thread_info) {
     }
 
     node_t* iter = head;
+    node_t* new  = NULL;
     while (iter->next != NULL) {
         iter = iter->next;
     }
-    iter = malloc(sizeof(node_t));
-    ASSERT(iter);
+    new = malloc(sizeof(node_t));
+    ASSERT(new);
 
-    iter->next        = NULL;
-    iter->thread_info = thread_info;
+    iter->next       = new;
+    new->thread_info = thread_info;
+    new->next        = NULL;
     xSemaphoreGive(consumer_sem);
 }
 
@@ -91,8 +93,9 @@ static void event_multiplexer(void* v) {
 
         node_t* iter = head;
         while (iter != NULL) {
+            ESP_LOGI(TAG, "Checking to see if %s is interested in event...", iter->thread_info->state_name_string);
             if (iter->thread_info->filter_event(event)) {
-                ESP_LOGI(TAG, "sending event!");
+                ESP_LOGI(TAG, "sending event %d to %s", event, iter->thread_info->state_name_string);
                 // State machine registered for event, send it!
                 iter->thread_info->send_event(event);
             }
@@ -129,7 +132,7 @@ static void state_machine(void* arg) {
     state_init_s* state_init_ptr = (state_init_s*)(arg);
     state_t       state          = state_init_ptr->starting_state;
     state_event_t new_event;
-    
+
     for (;;) {
         // Get the current state information
         state_array_s state_info = state_init_ptr->translator(state);

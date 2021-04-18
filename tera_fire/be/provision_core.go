@@ -10,6 +10,10 @@ type User_created_get_response struct {
 	Api_key string
 }
 
+type Validate_api_key_get_response struct {
+	Valid_api_key bool
+}
+
 func update_temp_user_cache(user Temp_partial_user_info) bool {
 	if user.Email == "" {
 		fmt.Println("NULL args!")
@@ -23,6 +27,18 @@ func update_temp_user_cache(user Temp_partial_user_info) bool {
 func create_get_request_response(api_key string) ([]byte, bool) {
 	var response User_created_get_response
 	response.Api_key = api_key
+	b, err := json.Marshal(response)
+
+	if err != nil {
+		fmt.Println("Failed to write...")
+		return nil, false
+	}
+	return b, true
+}
+
+func create_validate_api_response(status bool) ([]byte, bool) {
+	var response Validate_api_key_get_response
+	response.Valid_api_key = status
 	b, err := json.Marshal(response)
 
 	if err != nil {

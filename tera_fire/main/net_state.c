@@ -69,7 +69,7 @@ static void next_state_func(state_t* curr_state, state_event_t event) {
             *curr_state = net_waiting_wifi;
         }
     }
-#endif 
+#endif
     // Stay in the same state
 }
 
@@ -83,7 +83,7 @@ static char* event_print_func(state_event_t event) {
         return "wifi_connect";
         break;
     }
-#endif 
+#endif
     // event not targeted at this state machine
     return NULL;
 }
@@ -92,9 +92,9 @@ static char* event_print_func(state_event_t event) {
 static state_array_s get_state_func(state_t state) {
     static state_array_s func_table[net_state_len] = {
         //{      (state function)       , looper time },
-        { state_wait_for_wifi_func      , portMAX_DELAY },
+        { state_wait_for_wifi_func, portMAX_DELAY },
         { state_wait_for_provisions_func, 2500 / portTICK_PERIOD_MS },
-        { state_upload_data_func        , 2500 / portTICK_PERIOD_MS },
+        { state_upload_data_func, 2500 / portTICK_PERIOD_MS },
     };
 
     if (state >= net_state_len) {

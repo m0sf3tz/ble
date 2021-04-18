@@ -14,6 +14,7 @@
 
 #include "file_core.h"
 #include "global_defines.h"
+#include "wifi_state.h"
 
 /**********************************************************
 *                                        STATIC VARIABLES *
@@ -224,6 +225,9 @@ static void update_nvs(commandQ_file_t* commandQ_cmd) {
     }
 
     file_core_set(NVS_CHUNK, commandQ_cmd->provision_chunk);
+
+    // File core updated with new provision - let others know
+    state_post_event(wifi_new_provision_event);
 }
 
 static void file_thread(void* ptr) {
@@ -251,7 +255,7 @@ static void file_thread(void* ptr) {
 *                                        GLOBAL FUNCTIONS *
 **********************************************************/
 // If device is provisioned, breaks down the blob and
-// returns a particular value based on a key 
+// returns a particular value based on a key
 int get_provision_item(char* dest, uint8_t key) {
     int     rc;
     uint8_t buf[PROVISION_CHUNK_SIZE];
@@ -281,13 +285,16 @@ int get_provision_item(char* dest, uint8_t key) {
     case (PW_KEY):
         memcpy(dest, buf + PW_OFFSET, PW_LEN);
         return ITEM_GOOD;
+    case (API_KEY):
+        memcpy(dest, buf + API_OFFSET, API_LEN);
+        return ITEM_GOOD;
     default:
         ESP_LOGE(TAG, "Key not handled...");
         ASSERT(0);
     }
 }
 
-BaseType_t equeue_write(commandQ_file_t* commandQ_cmd) {
+BaseType_t enqueue_write(void* commandQ_cmd) {
     if (!commandQ_cmd) {
         ESP_LOGE(TAG, "PARAM NULL!");
         ASSERT(0);

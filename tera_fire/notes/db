@@ -1,0 +1,1 @@
+create table users (user_email varchar(60) not null primary key, lat varchar(20), long varchar(20), api_key varchar(64) not null, sensor_reading bytea, post_stamp integer);

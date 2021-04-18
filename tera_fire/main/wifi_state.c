@@ -1,21 +1,21 @@
 #include "esp_event.h"
-#include "esp_wifi.h"
-#include "esp_wifi_default.h"
-#include "sdkconfig.h"
-#include <string.h>
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_wifi.h"
+#include "esp_wifi_default.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+#include "sdkconfig.h"
+#include <string.h>
 
-#include "wifi_state.h"
 #include "file_core.h"
-#include "state_core.h"
 #include "global_defines.h"
+#include "state_core.h"
 #include "wifi_core.h"
+#include "wifi_state.h"
 
 /*********************************************************
 *                                       STATIC VARIABLES *
@@ -41,11 +41,11 @@ static void wifi_wait_for_provision() {
     err = get_provision_item(ssid_pw, PW_KEY);
     if (err != ITEM_GOOD) {
         ESP_LOGW(TAG, "ssid pw not set in nvs, can't connect");
-        return;  
+        return;
     }
-    
-    state_post_event(wifi_new_provision_event); 
-} 
+
+    state_post_event(wifi_new_provision_event);
+}
 
 static void wifi_start_connect() {
     ESP_LOGI(TAG, "Entering wifi_start_connect state");
@@ -56,10 +56,7 @@ static void wifi_stop_connect() {
     ESP_LOGI(TAG, "Entering wifi_stop state");
     wifi_core_stop();
 
-    // wait a bit for the clean up function to run
-    vTaskDelay( 2500 / portTICK_PERIOD_MS);
-
-    state_post_event(wifi_reset_event); 
+    state_post_event(wifi_reset_event);
 }
 
 // Returns the next state
@@ -70,25 +67,27 @@ static void next_state_func(state_t* curr_state, state_event_t event) {
     }
 
     // Always reset
-    if (event == wifi_reset_event){
-       *curr_state = wifi_waiting_provision_state ;
-       return;
-    }  
-
-    if( *curr_state == wifi_waiting_provision_state ){
-      if (event == wifi_new_provision_event){
-        *curr_state = wifi_connecting_state;
+    if (event == wifi_reset_event) {
+        *curr_state = wifi_waiting_provision_state;
         return;
-      }  
-    } 
+    }
+
+    if (*curr_state == wifi_waiting_provision_state) {
+        ESP_LOGE(TAG, "A, %d", event);
+        if (event == wifi_new_provision_event) {
+            ESP_LOGE(TAG, "B");
+            *curr_state = wifi_connecting_state;
+            return;
+        }
+    }
 
     // go back and start again
-    if( *curr_state == wifi_connecting_state ){
-      if (event == wifi_new_provision_event){
-        *curr_state = wifi_stop_state;
-        return;
-      }  
-    } 
+    if (*curr_state == wifi_connecting_state) {
+        if (event == wifi_new_provision_event) {
+            *curr_state = wifi_stop_state;
+            return;
+        }
+    }
 
     // Stay in the same state
 }
@@ -101,11 +100,12 @@ char* event_print_func(state_event_t event) {
 // Returns the state function, given a state
 static state_array_s get_state_func(state_t state) {
     static state_array_s func_table[wifi_state_len] = {
-        //{      (state function)           , looper time },
-        { wifi_wait_for_provision,            5000/ portTICK_PERIOD_MS },
-        { wifi_start_connect     ,            portMAX_DELAY }, 
-        { wifi_stop_connect      ,            portMAX_DELAY }
-    };
+        // clang-format off
+        { wifi_wait_for_provision, 5000 / portTICK_PERIOD_MS },
+        { wifi_start_connect     , portMAX_DELAY             },
+        { wifi_stop_connect      , portMAX_DELAY             }
+        // clang format on    
+  };
 
     if (state >= wifi_state_len) {
         ESP_LOGE(TAG, "Current state out of bounds!");
@@ -143,7 +143,7 @@ static bool event_filter_func(state_event_t event) {
 }
 
 state_init_s* get_wifi_state_handle() {
-    static state_init_s net_state = {
+    static state_init_s wifi_state = {
         .next_state        = next_state_func,
         .send_event        = send_event_func,
         .get_event         = get_event_func,
@@ -153,7 +153,7 @@ state_init_s* get_wifi_state_handle() {
         .state_name_string = "wifi_state",
         .filter_event      = event_filter_func,
     };
-    return &(net_state);
+    return &(wifi_state);
 }
 
 void wifi_state_spawner() {
