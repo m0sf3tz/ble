@@ -118,7 +118,7 @@ func validate_api_key(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func get_thermal_image(w http.ResponseWriter, req *http.Request) {
+func check_for_thermal_image(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		fmt.Println("GET!")
 
@@ -141,6 +141,61 @@ func get_thermal_image(w http.ResponseWriter, req *http.Request) {
 
 		w.Write(get_image())
 	}
+}
+
+func get_thermal_meta(w http.ResponseWriter, req *http.Request) {
+	if req.Method == "GET" {
+		fmt.Println("GET!")
+
+		err := req.ParseForm()
+		if err != nil {
+			panic(err)
+		}
+
+		// Make sure this get response is NOT cached...
+		w.Header().Add("Cache-Control", "no-cache")
+		w.Header().Add("Cache-Control", "max-age=0")
+		w.Header().Add("Media-Type", "image/png")
+
+		api_key := req.FormValue("api_key")
+		if api_key == "" {
+			fmt.Println("api key is NULL, returning")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		ok, json := db_get_latest_capture_meta_data(api_key)
+		if ok {
+			w.Write(json)
+		}
+	}
+}
+
+func get_thermal_image(w http.ResponseWriter, req *http.Request) {
+	/*
+		if req.Method == "GET" {
+			fmt.Println("GET!")
+
+			err := req.ParseForm()
+			if err != nil {
+				panic(err)
+			}
+
+			// Make sure this get response is NOT cached...
+			w.Header().Add("Cache-Control", "no-cache")
+			w.Header().Add("Cache-Control", "max-age=0")
+			w.Header().Add("Media-Type", "image/png")
+
+			api_key := req.FormValue("api_key")
+			if api_key == "" {
+				fmt.Println("api key is NULL, returning")
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			w.Write(get_image())
+		}
+	*/
 }
 
 func sensor_post(w http.ResponseWriter, req *http.Request) {
@@ -170,5 +225,6 @@ func main() {
 	http.HandleFunc("/api/validate_api_key/", validate_api_key)
 	http.HandleFunc("/api/sensor_post/", sensor_post)
 	http.HandleFunc("/api/get_thermal_image/", get_thermal_image)
+	http.HandleFunc("/api/get_thermal_meta/", get_thermal_meta)
 	log.Fatal(s.ListenAndServe())
 }

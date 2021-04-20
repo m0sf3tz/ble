@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
@@ -22,6 +23,11 @@ const (
 var db *sql.DB
 
 var letters = []byte("123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+type Thermal_meta_data struct {
+	Image_age   int
+	Image_valid bool
+}
 
 // to generate API key
 // Note: not cryptographically secure!
@@ -115,6 +121,34 @@ func db_update_post(api_key string, sensor_reading []byte) {
 	}
 }
 
+// returns meta data about latest image (so far, only how old the thermal capture is)
+func db_get_latest_capture_meta_data(api_key string) (bool, []byte) {
+
+	// wasetul, fetching more than we need: TODO: fix
+	_, timestamp, valid := db_get_sensor_reading(api_key)
+
+	var meta Thermal_meta_data
+
+	// Calculate how old the stored image is
+	image_age := int(time.Now().Unix()) - timestamp
+
+	if valid {
+		meta.Image_valid = valid
+		meta.Image_age = image_age
+	} else {
+		meta.Image_valid = false
+	}
+
+	bytes, err := json.Marshal(meta)
+	if err != nil {
+		fmt.Println("Failed to fetch...")
+		return false, nil
+	}
+	fmt.Println(bytes)
+
+	return true, bytes
+}
+
 func db_get_sensor_reading(api_key string) ([]byte, int, bool) {
 	var post_stamp int
 	var bytea []byte
@@ -122,7 +156,7 @@ func db_get_sensor_reading(api_key string) ([]byte, int, bool) {
 	row := db.QueryRow(`select sensor_reading, post_stamp from users where api_key = $1;`, api_key)
 	switch err := row.Scan(&bytea, &post_stamp); err {
 	case sql.ErrNoRows:
-		fmt.Println("No such user exists!")
+		fmt.Println("No such thermel image exists!")
 		return nil, 0, false
 	case nil:
 		return bytea, post_stamp, true
