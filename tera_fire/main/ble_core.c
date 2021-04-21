@@ -15,7 +15,7 @@
 #include "file_core.h"
 #include "net_state.h"
 #include "state_core.h"
-#include "wifi_state.h"
+#include "wifi_core.h"
 
 #define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
 
@@ -34,6 +34,10 @@
 
 #define ADV_CONFIG_FLAG      (1 << 0)
 #define SCAN_RSP_CONFIG_FLAG (1 << 1)
+
+#define NO_WIFI_NO_PROVISIONED (0)
+#define PROVISIONED            (1)
+#define WIFI_OK                (2)
 
 static uint8_t device_id[]     = { 0xAB, 0xCD, 'A', '1', 'B' };
 static uint8_t adv_config_done = 0;
@@ -357,7 +361,19 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 
         if (param->read.handle == handle_start + ID_VAL_WIFI) {
             ESP_LOGI(GATTS_TABLE_TAG, "Reading WIFI state");
-            rsp.attr_value.value[0] = get_net_state();
+            if ( get_wifi_state() ){
+              // We are connected to wifi, so we MUST be provisioned
+              ESP_LOGE(GATTS_TABLE_TAG, "Connected to WIFI!");
+              rsp.attr_value.value[0] = WIFI_OK;
+            } else if ( get_provisioned_state () == ITEM_GOOD ) {
+              // We have data in NVS, but no wifi
+              ESP_LOGE(GATTS_TABLE_TAG, "Device Provisioned!");
+              rsp.attr_value.value[0] = PROVISIONED;
+            } else {
+              // neither provisioned OR connected to wifi
+              ESP_LOGE(GATTS_TABLE_TAG, "Not provisioned! No WIFI!");
+              rsp.attr_value.value[0] = NO_WIFI_NO_PROVISIONED;
+            }
         } else {
             ESP_LOGI(GATTS_TABLE_TAG, "Read unknown item?!");
         }

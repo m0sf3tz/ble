@@ -39,8 +39,8 @@ bool create_packet(char* buf) {
     }
 
     // TODO: get reading
-    for (int i = 0; i < 20; i++) {
-        buf[i + API_LEN] = i;
+    for (int i = 0; i < 64; i++) {
+        buf[i + API_LEN] = i*3;
     }
     return true;
 }

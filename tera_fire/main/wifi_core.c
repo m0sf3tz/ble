@@ -18,14 +18,14 @@
 /**********************************************************
 *                                        STATIC VARIABLES *
 **********************************************************/
-
-static const char*    TAG = "WIFI_CORE";
-static esp_ip4_addr_t s_ip_addr;
-static const char*    s_connection_name;
-static esp_netif_t*   s_example_esp_netif = NULL;
-static char           ssid_name[SSID_LEN];
-static char           ssid_pw[PW_LEN];
-
+static const char*       TAG = "WIFI_CORE";
+static esp_ip4_addr_t    s_ip_addr;
+static const char*       s_connection_name;
+static esp_netif_t*      s_example_esp_netif = NULL;
+static char              ssid_name[SSID_LEN];
+static char              ssid_pw[PW_LEN];
+static SemaphoreHandle_t wifi_state_mutex;
+static bool              wifi_state;
 /**********************************************************
 *                                    FORWARD DECLERATIONS *
 **********************************************************/
@@ -35,10 +35,18 @@ static char           ssid_pw[PW_LEN];
 **********************************************************/
 
 static void on_got_ip(void* arg, esp_event_base_t event_base,
-                      int32_t event_id, void* event_data) {
+         int32_t event_id, void* event_data) {
     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
     memcpy(&s_ip_addr, &event->ip_info.ip, sizeof(s_ip_addr));
     ESP_LOGI(TAG, "IPv4 address: " IPSTR, IP2STR(&s_ip_addr));
+
+    ESP_LOGI(TAG, "Setting WiFi state to true!");
+    if (pdTRUE != xSemaphoreTake(wifi_state_mutex, WIFI_MUTEX_WAIT)) {
+        ESP_LOGE(TAG, "FAILED TO GET WIFI_STATE_MUTEX!");
+        ASSERT(0);
+    } 
+    wifi_state = true;
+    xSemaphoreGive(wifi_state_mutex);
 }
 
 static void on_wifi_disconnect(void* arg, esp_event_base_t event_base,
@@ -49,6 +57,14 @@ static void on_wifi_disconnect(void* arg, esp_event_base_t event_base,
         return;
     }
     ESP_ERROR_CHECK(err);
+
+    ESP_LOGI(TAG, "Setting WiFi state to false!");
+    if (pdTRUE != xSemaphoreTake(wifi_state_mutex, WIFI_MUTEX_WAIT)) {
+        ESP_LOGE(TAG, "FAILED TO GET WIFI_STATE_MUTEX!");
+        ASSERT(0);
+    }
+    wifi_state = false;
+    xSemaphoreGive(wifi_state_mutex);
 }
 
 void wifi_core_connect(void) {
@@ -108,15 +124,19 @@ void wifi_core_stop(void) {
     s_example_esp_netif = NULL;
 }
 
-int test_wifi() {
-    while (true) {
-        wifi_core_connect();
-
-        vTaskDelay(15000 / portTICK_PERIOD_MS);
-
-        wifi_core_stop();
-        vTaskDelay(15000 / portTICK_PERIOD_MS);
+bool get_wifi_state() {
+    if (pdTRUE != xSemaphoreTake(wifi_state_mutex, WIFI_MUTEX_WAIT)) {
+        ESP_LOGE(TAG, "FAILED TO GET WIFI_STATE_MUTEX!");
+        ASSERT(0);
     }
+    bool ret = wifi_state;
+    xSemaphoreGive(wifi_state_mutex);
 
-    return 0;
+    return ret;
+}
+
+void init_wifi() {
+    wifi_state_mutex = xSemaphoreCreateMutex();
+  
+    ASSERT(wifi_state_mutex);
 }

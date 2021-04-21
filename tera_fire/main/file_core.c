@@ -254,6 +254,22 @@ static void file_thread(void* ptr) {
 /**********************************************************
 *                                        GLOBAL FUNCTIONS *
 **********************************************************/
+
+// Checks to see if the device has been provisioned
+bool get_provisioned_state(){
+    int     rc;
+    uint8_t buf[PROVISION_CHUNK_SIZE];
+
+    ESP_LOGI(TAG, "fetching from memory!");
+    rc = file_core_get(NVS_CHUNK, buf);
+    if (rc != ITEM_GOOD) {
+        return rc;
+    } else {
+        return ITEM_GOOD;
+    }
+}
+
+
 // If device is provisioned, breaks down the blob and
 // returns a particular value based on a key
 int get_provision_item(char* dest, uint8_t key) {

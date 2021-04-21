@@ -31,7 +31,6 @@
 void         wifi_core_connect();
 void         wifi_core_stop();
 void         wifi_core_init_freertos_objects();
-void         set_wifi_state(uint32_t state);
-uint32_t     get_wifi_state();
 esp_netif_t* get_example_netif(void);
-int          test_wifi();
+void         init_wifi();
+bool         get_wifi_state();

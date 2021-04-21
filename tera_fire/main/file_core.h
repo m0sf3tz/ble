@@ -69,3 +69,4 @@ void       fetch_nvs(commandQ_file_t* commandQ_cmd);
 void       file_core_spawner(void);
 BaseType_t enqueue_write(void* commandQ_cmd);
 int        get_provision_item(char* dest, uint8_t key);
+bool       get_provisioned_state();

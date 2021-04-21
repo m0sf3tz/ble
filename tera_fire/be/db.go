@@ -25,8 +25,9 @@ var db *sql.DB
 var letters = []byte("123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 type Thermal_meta_data struct {
-	Image_age   int
-	Image_valid bool
+	Image_age    int
+	Image_valid  bool
+	Fire_present bool
 }
 
 // to generate API key
@@ -121,12 +122,9 @@ func db_update_post(api_key string, sensor_reading []byte) {
 	}
 }
 
-// returns meta data about latest image (so far, only how old the thermal capture is)
 func db_get_latest_capture_meta_data(api_key string) (bool, []byte) {
 
-	// wasetul, fetching more than we need: TODO: fix
-	_, timestamp, valid := db_get_sensor_reading(api_key)
-
+	bytes, timestamp, valid := db_get_sensor_reading(api_key)
 	var meta Thermal_meta_data
 
 	// Calculate how old the stored image is
@@ -135,6 +133,7 @@ func db_get_latest_capture_meta_data(api_key string) (bool, []byte) {
 	if valid {
 		meta.Image_valid = valid
 		meta.Image_age = image_age
+		meta.Fire_present = is_there_fire(bytes)
 	} else {
 		meta.Image_valid = false
 	}
