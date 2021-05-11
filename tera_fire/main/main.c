@@ -16,11 +16,13 @@
 #include "state_core.h"
 #include "wifi_core.h"
 #include "wifi_state.h"
+#include "thermal.h"
 
 int app_main() {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    thermal_init();
 
     init_wifi();
     ble_init();
@@ -37,10 +39,10 @@ int app_main() {
     char test[700];
 
     while (true) {
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         create_packet(test);
         http_test();
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
+   
     return (0);
 }

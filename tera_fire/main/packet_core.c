@@ -14,6 +14,7 @@
 #include "file_core.h"
 #include "global_defines.h"
 #include "packet_core.h"
+#include "thermal.h" 
 
 /*********************************************************
 *                                       STATIC VARIABLES *
@@ -21,7 +22,7 @@
 static const char TAG[] = "PACKET_CORE";
 
 /**********************************************************
-*                                         STATE FUNCTIONS *
+*                                          IMPLEMENTATION *
 **********************************************************/
 bool create_packet(char* buf) {
     if (!buf) {
@@ -38,9 +39,6 @@ bool create_packet(char* buf) {
         return false;
     }
 
-    // TODO: get reading
-    for (int i = 0; i < 64; i++) {
-        buf[i + API_LEN] = i*3;
-    }
+    get_thermal_image((uint8_t*)(buf + API_LEN));
     return true;
 }

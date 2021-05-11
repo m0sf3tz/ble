@@ -116,9 +116,6 @@ static void http_rest_with_hostname_path(void) {
        esp_http_client_cleanup(client);
       return;
     }
-    for (int i =0; i < 70; i++){
-      printf("%d: %d \n", i, buf[i]);
-    }
     
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
