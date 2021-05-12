@@ -26,12 +26,13 @@ void ble_init(void);
 **********************************************************/
 /* Attributes State Machine */
 enum {
-    IDX_SVC,
-    IDX_CHAR_A,
-    IDX_VAL_A,
+    ID_FIRE_SVC,
 
-    ID_CHAR_WIFI,
-    ID_VAL_WIFI,
+    ID_PROV_CHAR,
+    ID_PROV_VAL,
 
-    IDX_FINAL,
+    ID_STATUS_CHAR,
+    ID_STATUS_VAL,
+
+    ID_FINAL,
 };

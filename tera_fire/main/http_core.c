@@ -132,11 +132,6 @@ static void http_rest_with_hostname_path(void) {
     esp_http_client_cleanup(client);
 }
 
-static void http_test_task(void* pvParameters) {
+void http_post(void) {
     http_rest_with_hostname_path();
-    vTaskDelete(NULL);
-}
-
-void http_test(void) {
-    xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
 }

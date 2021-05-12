@@ -17,7 +17,7 @@
 #include "state_core.h"
 #include "wifi_core.h"
 
-#define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
+#define GATTS_TABLE_TAG "BLE_CORE"
 
 #define PROFILE_NUM        1
 #define PROFILE_APP_IDX    0
@@ -39,11 +39,11 @@
 #define PROVISIONED            (1)
 #define WIFI_OK                (2)
 
-static uint8_t device_id[]     = { 0xAB, 0xCD, 'A', '1', 'B' };
+static uint8_t device_id[]     = { 0xAB, 0xCD, 'A', '1', 'C' };
 static uint8_t adv_config_done = 0;
 static uint8_t handle_start;
 
-uint16_t heart_rate_handle_table[IDX_FINAL];
+uint16_t tera_fire_handle_table[ID_FINAL];
 
 typedef struct {
     uint8_t* prepare_buf;
@@ -178,21 +178,21 @@ static const uint8_t prov_value[1]; // Note, this is not actually used, the appl
                                     // nevertheless, the API to set up the GATT table takes an arugement, so we pass this
 
 /* Full Database Description - Used to add attributes into the database */
-static const esp_gatts_attr_db_t gatt_db[IDX_FINAL] = {
+static const esp_gatts_attr_db_t gatt_db[ID_FINAL] = {
     // Service Declaration
-    [IDX_SVC] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&primary_service_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(GATTS_SERVICE_UUID_TEST), (uint8_t*)&GATTS_SERVICE_UUID_TEST } },
+    [ID_FIRE_SVC] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&primary_service_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(GATTS_SERVICE_UUID_TEST), (uint8_t*)&GATTS_SERVICE_UUID_TEST } },
 
     /* Characteristic Declaration */
-    [IDX_CHAR_A] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_prop_read_write } },
+    [ID_PROV_CHAR] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_prop_read_write} },
 
     /* Characteristic Value */
-    [IDX_VAL_A] = { { ESP_GATT_RSP_BY_APP }, { ESP_UUID_LEN_16, (uint8_t*)&GATTS_CHAR_UUID_TERA_FIRE, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(prov_value), (uint8_t*)prov_value } },
+    [ID_PROV_VAL] = { { ESP_GATT_RSP_BY_APP }, { ESP_UUID_LEN_16, (uint8_t*)&GATTS_CHAR_UUID_TERA_FIRE, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(prov_value), (uint8_t*)prov_value } },
 
     /* Wifi state Characteristic Declaration */
-    [ID_CHAR_WIFI] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_prop_read } },
+    [ID_STATUS_CHAR] = { { ESP_GATT_AUTO_RSP }, { ESP_UUID_LEN_16, (uint8_t*)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t*)&char_prop_read } },
 
     /* Wifi state Characteristic Value */
-    [ID_VAL_WIFI] = { { ESP_GATT_RSP_BY_APP }, { ESP_UUID_LEN_16, (uint8_t*)&GATTS_CHAR_UUID_WIFI_STATE, ESP_GATT_PERM_READ, GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(prov_value), (uint8_t*)prov_value } },
+    [ID_STATUS_VAL] = { { ESP_GATT_RSP_BY_APP }, { ESP_UUID_LEN_16, (uint8_t*)&GATTS_CHAR_UUID_WIFI_STATE, ESP_GATT_PERM_READ, GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(prov_value), (uint8_t*)prov_value } },
 };
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param) {
@@ -347,7 +347,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         }
         adv_config_done |= SCAN_RSP_CONFIG_FLAG;
 #endif
-        esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, IDX_FINAL, SVC_INST_ID);
+        esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, ID_FINAL, SVC_INST_ID);
         if (create_attr_ret) {
             ESP_LOGE(GATTS_TABLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
         }
@@ -359,7 +359,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         rsp.attr_value.handle = param->read.handle;
         rsp.attr_value.len    = 1;
 
-        if (param->read.handle == handle_start + ID_VAL_WIFI) {
+        if (param->read.handle == handle_start + ID_STATUS_VAL) {
             ESP_LOGI(GATTS_TABLE_TAG, "Reading WIFI state");
             if ( get_wifi_state() ){
               // We are connected to wifi, so we MUST be provisioned
@@ -440,14 +440,14 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
         if (param->add_attr_tab.status != ESP_GATT_OK) {
             ESP_LOGE(GATTS_TABLE_TAG, "create attribute table failed, error code=0x%x", param->add_attr_tab.status);
-        } else if (param->add_attr_tab.num_handle != IDX_FINAL) {
+        } else if (param->add_attr_tab.num_handle != ID_FINAL) {
             ESP_LOGE(GATTS_TABLE_TAG, "create attribute table abnormally, num_handle (%d) \
-                        doesn't equal to IDX_FINAL(%d)",
-                     param->add_attr_tab.num_handle, IDX_FINAL);
+                        doesn't equal to ID_FINAL(%d)",
+                     param->add_attr_tab.num_handle, ID_FINAL);
         } else {
             ESP_LOGI(GATTS_TABLE_TAG, "create attribute table successfully, the number handle = %d\n", param->add_attr_tab.num_handle);
-            memcpy(heart_rate_handle_table, param->add_attr_tab.handles, sizeof(heart_rate_handle_table));
-            esp_ble_gatts_start_service(heart_rate_handle_table[IDX_SVC]);
+            memcpy(tera_fire_handle_table, param->add_attr_tab.handles, sizeof(tera_fire_handle_table));
+            esp_ble_gatts_start_service(tera_fire_handle_table[ID_FIRE_SVC]);
         }
         break;
     }

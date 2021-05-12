@@ -18,6 +18,11 @@
 #include "wifi_state.h"
 #include "thermal.h"
 
+
+// What we will store sensor readings into, also API key
+// Will post this to backend
+char buff[API_LEN + SENSOR_READING_LEN];
+
 int app_main() {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
@@ -32,16 +37,12 @@ int app_main() {
     net_state_spawner();
     wifi_state_spawner();
 
-    vTaskDelay(30000 / portTICK_PERIOD_MS);
-    ESP_LOGI("TAG", "posting!");
-    http_test();
-
-    char test[700];
-
     while (true) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        create_packet(test);
-        http_test();
+        if (get_wifi_state()){
+          create_packet(buff);
+          http_post();
+        }
     }
    
     return (0);
